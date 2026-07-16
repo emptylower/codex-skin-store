@@ -33,6 +33,7 @@ export const themes = sqliteTable("themes", {
   }).notNull(),
   favoritesCount: integer("favorites_count").notNull().default(0),
   downloadsCount: integer("downloads_count").notNull().default(0),
+  trendScore: integer("trend_score").notNull().default(0),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
