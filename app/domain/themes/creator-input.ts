@@ -1,10 +1,18 @@
 import { z } from "zod";
 
-export const MACOS_TARGET = "original-macos-v1" as const;
-export const WINDOWS_TARGET = "forge-windows-v1" as const;
+import {
+  COMPATIBILITY_TARGETS,
+  MACOS_TARGET,
+  WINDOWS_TARGET,
+  type CompatibilityTarget,
+} from "~/domain/themes/compatibility";
 
-export const COMPATIBILITY_TARGETS = [MACOS_TARGET, WINDOWS_TARGET] as const;
-export type CompatibilityTarget = (typeof COMPATIBILITY_TARGETS)[number];
+export {
+  COMPATIBILITY_TARGETS,
+  MACOS_TARGET,
+  WINDOWS_TARGET,
+  type CompatibilityTarget,
+};
 
 const hex = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 
