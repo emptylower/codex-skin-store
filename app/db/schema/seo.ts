@@ -1,5 +1,9 @@
 import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 
+/**
+ * dimension and taxonomy_key are both-or-neither (SQL CHECK).
+ * Taxonomy filter landings set both; non-filter landings leave both null.
+ */
 export const seoLandings = sqliteTable("seo_landings", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(),

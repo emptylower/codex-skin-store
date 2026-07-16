@@ -29,6 +29,10 @@ export const themes = sqliteTable("themes", {
     .references(() => users.id),
   slug: text("slug").notNull().unique(),
   sourceLocale: text("source_locale", { enum: ["en", "zh-hans"] }).notNull(),
+  /**
+   * App invariant: null or an existing theme_versions.version for this theme.
+   * Composite FK is deferred until the publish path can maintain it atomically.
+   */
   currentVersion: integer("current_version"),
   visibility: text("visibility", {
     enum: ["draft", "public", "unlisted", "hidden"],
@@ -86,11 +90,24 @@ export const themeTranslations = sqliteTable(
   (table) => [unique().on(table.themeId, table.locale)],
 );
 
+/** Controlled launch dimensions: style/mood/mode (seed) + media/platform (filters). */
+export const TAXONOMY_DIMENSIONS = [
+  "style",
+  "mood",
+  "mode",
+  "media",
+  "platform",
+] as const;
+
+export type TaxonomyDimension = (typeof TAXONOMY_DIMENSIONS)[number];
+
 export const taxonomies = sqliteTable(
   "taxonomies",
   {
     id: text("id").primaryKey(),
-    dimension: text("dimension").notNull(),
+    dimension: text("dimension", {
+      enum: TAXONOMY_DIMENSIONS,
+    }).notNull(),
     key: text("key").notNull(),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),

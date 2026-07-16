@@ -19,6 +19,9 @@ CREATE TABLE themes (
   author_id TEXT NOT NULL REFERENCES users (id),
   slug TEXT NOT NULL UNIQUE,
   source_locale TEXT NOT NULL CHECK (source_locale IN ('en', 'zh-hans')),
+  -- App invariant: current_version is NULL or matches an existing
+  -- theme_versions.version for this theme. Composite FK is deferred until
+  -- the publish path can maintain that relationship atomically.
   current_version INTEGER,
   visibility TEXT NOT NULL CHECK (visibility IN ('draft', 'public', 'unlisted', 'hidden')),
   moderation_status TEXT NOT NULL CHECK (moderation_status IN ('clean', 'flagged', 'removed')),
@@ -58,7 +61,11 @@ CREATE TABLE theme_translations (
 
 CREATE TABLE taxonomies (
   id TEXT PRIMARY KEY,
-  dimension TEXT NOT NULL,
+  -- Controlled launch dimensions: seed uses style/mood/mode; media/platform
+  -- are reserved for plan-controlled filters.
+  dimension TEXT NOT NULL CHECK (
+    dimension IN ('style', 'mood', 'mode', 'media', 'platform')
+  ),
   key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
@@ -82,6 +89,8 @@ CREATE TABLE theme_taxonomies (
   PRIMARY KEY (theme_id, taxonomy_id)
 );
 
+-- Taxonomy filter landings must set both dimension and taxonomy_key;
+-- non-filter landings must leave both NULL (both-or-neither CHECK below).
 CREATE TABLE seo_landings (
   id TEXT PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
@@ -91,7 +100,11 @@ CREATE TABLE seo_landings (
     eligibility_status IN ('candidate', 'eligible', 'excluded')
   ),
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  CHECK (
+    (dimension IS NULL AND taxonomy_key IS NULL)
+    OR (dimension IS NOT NULL AND taxonomy_key IS NOT NULL)
+  )
 );
 
 CREATE TABLE seo_landing_translations (
