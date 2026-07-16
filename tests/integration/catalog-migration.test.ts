@@ -89,7 +89,11 @@ describe("catalog migration", () => {
 
   it("rejects themes.author_id pointing to a missing user", async () => {
     await expect(
-      insertTheme("theme-missing-author", "user-does-not-exist", "missing-author"),
+      insertTheme(
+        "theme-missing-author",
+        "user-does-not-exist",
+        "missing-author",
+      ),
     ).rejects.toThrow();
   });
 
@@ -212,15 +216,7 @@ describe("catalog migration", () => {
            id, slug, dimension, taxonomy_key, eligibility_status, created_at, updated_at
          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-        .bind(
-          "seo-half-a",
-          "half-a",
-          "style",
-          null,
-          "candidate",
-          NOW,
-          NOW,
-        )
+        .bind("seo-half-a", "half-a", "style", null, "candidate", NOW, NOW)
         .run(),
     ).rejects.toThrow();
 
@@ -230,15 +226,7 @@ describe("catalog migration", () => {
            id, slug, dimension, taxonomy_key, eligibility_status, created_at, updated_at
          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-        .bind(
-          "seo-half-b",
-          "half-b",
-          null,
-          "neon",
-          "candidate",
-          NOW,
-          NOW,
-        )
+        .bind("seo-half-b", "half-b", null, "neon", "candidate", NOW, NOW)
         .run(),
     ).rejects.toThrow();
   });

@@ -470,7 +470,9 @@ describe("marketplace public queries", () => {
 
     expect(slugs).not.toContain("mq-processing");
     expect(slugs).not.toContain("mq-failed");
-    expect(await services.marketplace.getTheme("mq-processing", "en")).toBeNull();
+    expect(
+      await services.marketplace.getTheme("mq-processing", "en"),
+    ).toBeNull();
     expect(await services.marketplace.getTheme("mq-failed", "en")).toBeNull();
   });
 
@@ -486,8 +488,12 @@ describe("marketplace public queries", () => {
 
   it("excludes themes with null current_version from public list and detail", async () => {
     const result = await services.marketplace.listThemes("en", {});
-    expect(result.items.map((item) => item.slug)).not.toContain("mq-no-current");
-    expect(await services.marketplace.getTheme("mq-no-current", "en")).toBeNull();
+    expect(result.items.map((item) => item.slug)).not.toContain(
+      "mq-no-current",
+    );
+    expect(
+      await services.marketplace.getTheme("mq-no-current", "en"),
+    ).toBeNull();
   });
 
   it("excludes themes with invalid manifest platform/mode/media", async () => {
@@ -619,7 +625,9 @@ describe("marketplace public queries", () => {
     expect(
       await services.marketplace.getTheme("mq-untranslated", "en"),
     ).toBeNull();
-    expect(await services.marketplace.getTheme("missing-slug", "en")).toBeNull();
+    expect(
+      await services.marketplace.getTheme("missing-slug", "en"),
+    ).toBeNull();
   });
 
   it("returns localized public theme detail with creator and manifest facts", async () => {

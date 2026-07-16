@@ -91,30 +91,30 @@ describe("resolveUniqueSlug", () => {
 
 describe("canChangeSlug", () => {
   it("allows changes for unpublished drafts", () => {
-    expect(
-      canChangeSlug({ visibility: "draft", currentVersion: null }),
-    ).toBe(true);
+    expect(canChangeSlug({ visibility: "draft", currentVersion: null })).toBe(
+      true,
+    );
   });
 
   it("locks slugs once a version has been published", () => {
-    expect(
-      canChangeSlug({ visibility: "draft", currentVersion: 1 }),
-    ).toBe(false);
-    expect(
-      canChangeSlug({ visibility: "public", currentVersion: 1 }),
-    ).toBe(false);
+    expect(canChangeSlug({ visibility: "draft", currentVersion: 1 })).toBe(
+      false,
+    );
+    expect(canChangeSlug({ visibility: "public", currentVersion: 1 })).toBe(
+      false,
+    );
   });
 
   it("locks slugs for non-draft visibility even without a version", () => {
-    expect(
-      canChangeSlug({ visibility: "public", currentVersion: null }),
-    ).toBe(false);
+    expect(canChangeSlug({ visibility: "public", currentVersion: null })).toBe(
+      false,
+    );
     expect(
       canChangeSlug({ visibility: "unlisted", currentVersion: null }),
     ).toBe(false);
-    expect(
-      canChangeSlug({ visibility: "hidden", currentVersion: null }),
-    ).toBe(false);
+    expect(canChangeSlug({ visibility: "hidden", currentVersion: null })).toBe(
+      false,
+    );
   });
 });
 

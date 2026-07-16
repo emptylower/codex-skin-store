@@ -16,7 +16,7 @@ import {
   buildBasicMeta,
   taxonomyPath,
   type HreflangAlternate,
-} from "~/services/seo/meta.server";
+} from "~/services/seo/meta";
 import {
   buildBreadcrumbList,
   taxonomyBreadcrumbs,

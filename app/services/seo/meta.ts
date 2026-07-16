@@ -6,7 +6,7 @@ export type SeoMetaDescriptor =
   | { title: string }
   | { name: string; content: string }
   | { property: string; content: string }
-  | { tagName: "link"; rel: string; href: string; hreflang?: string }
+  | { tagName: "link"; rel: string; href: string; hrefLang?: string }
   | { "script:ld+json": JsonLd | JsonLd[] };
 
 export type HreflangAlternate = {
@@ -46,7 +46,8 @@ export function buildHreflangAlternates(
   const tags: SeoMetaDescriptor[] = alternates.map((entry) => ({
     tagName: "link",
     rel: "alternate",
-    hreflang: hreflangTag(entry.locale),
+    // React expects camelCase hrefLang; serialized HTML attribute is hreflang.
+    hrefLang: hreflangTag(entry.locale),
     href: absoluteUrl(origin, entry.path),
   }));
 
@@ -58,7 +59,7 @@ export function buildHreflangAlternates(
     tags.push({
       tagName: "link",
       rel: "alternate",
-      hreflang: "x-default",
+      hrefLang: "x-default",
       href: absoluteUrl(origin, xDefaultPath),
     });
   }
@@ -66,9 +67,7 @@ export function buildHreflangAlternates(
   return tags;
 }
 
-export function buildRobotsMeta(
-  indexable: boolean,
-): SeoMetaDescriptor | null {
+export function buildRobotsMeta(indexable: boolean): SeoMetaDescriptor | null {
   if (indexable) return null;
   return { name: "robots", content: "noindex,follow" };
 }

@@ -11,7 +11,7 @@ import {
   buildBasicMeta,
   policyPath,
   type HreflangAlternate,
-} from "~/services/seo/meta.server";
+} from "~/services/seo/meta";
 import type { Route } from "./+types/policy-page";
 
 const POLICY_PAGES = ["terms", "privacy", "copyright", "about"] as const;

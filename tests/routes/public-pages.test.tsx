@@ -2,7 +2,9 @@ import { env } from "cloudflare:workers";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import CreatorProfile, { loader as creatorLoader } from "~/routes/creator-profile";
+import CreatorProfile, {
+  loader as creatorLoader,
+} from "~/routes/creator-profile";
 import PolicyPage, { loader as policyLoader } from "~/routes/policy-page";
 import TaxonomyHub, { loader as taxonomyLoader } from "~/routes/taxonomy-hub";
 import ThemeDetail, { loader as themeLoader } from "~/routes/theme-detail";
@@ -158,15 +160,7 @@ async function insertTheme(options: {
        translation_status, created_at, updated_at
      ) VALUES (?, ?, 'en', ?, ?, ?, 'reviewed', ?, ?)`,
   )
-    .bind(
-      `tr-${id}-en`,
-      id,
-      name,
-      `${name} summary`,
-      description,
-      NOW,
-      NOW,
-    )
+    .bind(`tr-${id}-en`, id, name, `${name} summary`, description, NOW, NOW)
     .run();
 }
 
@@ -251,12 +245,7 @@ beforeAll(async () => {
   await insertTaxonomy("tax-pp-minimal", "style", "minimal");
   // Same key under a different dimension — hub filtering must not bleed across dims.
   await insertTaxonomy("tax-pp-mood-neon", "mood", "neon");
-  await insertTaxonomyTranslation(
-    "tt-pp-neon-en",
-    "tax-pp-neon",
-    "en",
-    "Neon",
-  );
+  await insertTaxonomyTranslation("tt-pp-neon-en", "tax-pp-neon", "en", "Neon");
   await insertTaxonomyTranslation(
     "tt-pp-minimal-en",
     "tax-pp-minimal",

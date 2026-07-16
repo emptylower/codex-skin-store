@@ -15,7 +15,7 @@ import {
   buildBasicMeta,
   creatorPath,
   type HreflangAlternate,
-} from "~/services/seo/meta.server";
+} from "~/services/seo/meta";
 import {
   absoluteUrl,
   buildBreadcrumbList,

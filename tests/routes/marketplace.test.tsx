@@ -2,10 +2,7 @@ import { env } from "cloudflare:workers";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import Marketplace, {
-  loader,
-  meta,
-} from "~/routes/marketplace";
+import Marketplace, { loader, meta } from "~/routes/marketplace";
 
 const NOW = 1_700_200_000_000;
 
@@ -294,9 +291,9 @@ describe("marketplace route", () => {
   });
 
   it("404s for unknown locales", async () => {
-    await expect(loader(loaderArgs("http://localhost/fr", "fr"))).rejects.toMatchObject(
-      { status: 404 },
-    );
+    await expect(
+      loader(loaderArgs("http://localhost/fr", "fr")),
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("applies valid platform filter without error", async () => {

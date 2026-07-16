@@ -22,7 +22,9 @@ export function CodexTask({ themeName }: CodexTaskProps) {
         </aside>
         <section className="codex-task__main" aria-label="Task transcript">
           <h3 className="codex-task__panel-title">Transcript</h3>
-          <p className="codex-task__line">User: Implement the theme simulator.</p>
+          <p className="codex-task__line">
+            User: Implement the theme simulator.
+          </p>
           <p className="codex-task__line">
             Codex: Building an accessible Home/Task preview for {themeName}.
           </p>

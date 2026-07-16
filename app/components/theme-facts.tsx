@@ -7,16 +7,17 @@ export type ThemeFactsProps = {
   filterLabels: Messages["filters"];
 };
 
-function readLicense(manifest: Record<string, unknown>, fallback: string): string {
+function readLicense(
+  manifest: Record<string, unknown>,
+  fallback: string,
+): string {
   const license = manifest.license;
   return typeof license === "string" && license.trim().length > 0
     ? license
     : fallback;
 }
 
-function formatFocal(
-  preview: ThemeDetail["preview"],
-): string | null {
+function formatFocal(preview: ThemeDetail["preview"]): string | null {
   const x = preview?.focalX;
   const y = preview?.focalY;
   if (typeof x !== "number" && typeof y !== "number") return null;

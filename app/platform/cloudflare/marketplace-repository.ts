@@ -37,7 +37,9 @@ type ManifestFacts = {
 };
 
 function readOptionalNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 function readPreviewFromManifest(
@@ -52,7 +54,11 @@ function readPreviewFromManifest(
         muted?: string;
       }
     | undefined;
-  if (paletteRaw && typeof paletteRaw === "object" && !Array.isArray(paletteRaw)) {
+  if (
+    paletteRaw &&
+    typeof paletteRaw === "object" &&
+    !Array.isArray(paletteRaw)
+  ) {
     const p = paletteRaw as Record<string, unknown>;
     palette = {
       bg: typeof p.bg === "string" ? p.bg : undefined,
@@ -79,7 +85,12 @@ function readPreviewFromManifest(
 
   const overlay = readOptionalNumber(parsed.overlay);
 
-  if (!palette && focalX === undefined && focalY === undefined && overlay === undefined) {
+  if (
+    !palette &&
+    focalX === undefined &&
+    focalY === undefined &&
+    overlay === undefined
+  ) {
     return undefined;
   }
 
@@ -135,7 +146,15 @@ function parseManifest(manifestJson: string): ManifestFacts | null {
     typeof parsed.coverImage === "string" ? parsed.coverImage : null;
   const preview = readPreviewFromManifest(parsed);
 
-  return { platform, mode, media, previewImage, coverImage, preview, raw: parsed };
+  return {
+    platform,
+    mode,
+    media,
+    previewImage,
+    coverImage,
+    preview,
+    raw: parsed,
+  };
 }
 
 function matchesPlatform(
@@ -191,7 +210,9 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     );
 
     let items = rows
-      .map((row) => this.toListItem(row, taxonomyByTheme.get(row.theme.id) ?? []))
+      .map((row) =>
+        this.toListItem(row, taxonomyByTheme.get(row.theme.id) ?? []),
+      )
       .filter((item): item is ThemeListItem => item !== null);
 
     items = this.applyFilters(items, filters);
@@ -242,9 +263,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
 
     const translationStatus = await this.loadTranslationStatus(row.theme.id);
     const availableLocales = (
-      Object.entries(translationStatus) as Array<
-        [Locale, "draft" | "reviewed"]
-      >
+      Object.entries(translationStatus) as Array<[Locale, "draft" | "reviewed"]>
     )
       .filter(([, status]) => status === "reviewed")
       .map(([code]) => code);
@@ -286,7 +305,12 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
           eq(taxonomyTranslations.locale, locale),
         ),
       )
-      .where(and(eq(taxonomies.dimension, dimension as never), eq(taxonomies.key, key)))
+      .where(
+        and(
+          eq(taxonomies.dimension, dimension as never),
+          eq(taxonomies.key, key),
+        ),
+      )
       .limit(1);
 
     const row = rows[0];
@@ -317,7 +341,9 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     );
 
     const themeItems = rows
-      .map((row) => this.toListItem(row, taxonomyByTheme.get(row.theme.id) ?? []))
+      .map((row) =>
+        this.toListItem(row, taxonomyByTheme.get(row.theme.id) ?? []),
+      )
       .filter((item): item is ThemeListItem => item !== null)
       .sort((a, b) => {
         if (b.downloadsCount !== a.downloadsCount) {

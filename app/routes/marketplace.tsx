@@ -15,10 +15,7 @@ import {
   type ThemeListItem,
 } from "~/services/marketplace/types";
 import { isIndexableMarketplace } from "~/services/seo/index-policy";
-import {
-  buildBasicMeta,
-  localeRootAlternates,
-} from "~/services/seo/meta.server";
+import { buildBasicMeta, localeRootAlternates } from "~/services/seo/meta";
 import type { Route } from "./+types/marketplace";
 
 function emptyToUndefined(value: string | null): string | undefined {
@@ -84,7 +81,9 @@ function formDefaultsFromSearchParams(
       sort === "trending" || sort === "newest" || sort === "downloads"
         ? sort
         : "trending",
-    taxonomy: parseTaxonomy(searchParams).slice(0, 4).map((t) => t.slice(0, 40)),
+    taxonomy: parseTaxonomy(searchParams)
+      .slice(0, 4)
+      .map((t) => t.slice(0, 40)),
   };
 }
 
@@ -122,8 +121,7 @@ export function meta({ data }: Route.MetaArgs) {
   const title = `Codex Skin Store · ${data.messages.marketplace.heading}`;
   const description = data.messages.marketplace.description;
   const canonicalPath = localePath(data.locale);
-  const indexable =
-    !data.filterError && isIndexableMarketplace(data.filters);
+  const indexable = !data.filterError && isIndexableMarketplace(data.filters);
 
   return buildBasicMeta({
     title,
@@ -186,13 +184,18 @@ export default function Marketplace({ loaderData }: Route.ComponentProps) {
     <main className="marketplace">
       <header className="marketplace__header">
         <div className="marketplace__brand">
-          <span className="marketplace__brand-text">{messages.nav.explore}</span>
+          <span className="marketplace__brand-text">
+            {messages.nav.explore}
+          </span>
         </div>
         <h1>{messages.marketplace.heading}</h1>
         <p className="marketplace__lede">{messages.marketplace.lede}</p>
       </header>
 
-      <section className="marketplace__filters" aria-label={messages.filters.heading}>
+      <section
+        className="marketplace__filters"
+        aria-label={messages.filters.heading}
+      >
         <FilterBar
           filters={filters}
           labels={messages.filters}
@@ -231,7 +234,9 @@ export default function Marketplace({ loaderData }: Route.ComponentProps) {
         className="marketplace__grid-section"
         aria-label={messages.marketplace.grid}
       >
-        <h2 className="marketplace__section-title">{messages.marketplace.grid}</h2>
+        <h2 className="marketplace__section-title">
+          {messages.marketplace.grid}
+        </h2>
         {themes.length === 0 ? (
           <p className="marketplace__empty">{messages.marketplace.empty}</p>
         ) : (

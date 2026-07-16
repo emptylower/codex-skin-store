@@ -13,12 +13,7 @@ import {
   isIndexableTheme,
 } from "./index-policy";
 import { absoluteUrl } from "./structured-data";
-import {
-  creatorPath,
-  policyPath,
-  taxonomyPath,
-  themePath,
-} from "./meta.server";
+import { creatorPath, policyPath, taxonomyPath, themePath } from "./meta";
 
 const POLICY_PAGES = ["terms", "privacy", "copyright", "about"] as const;
 

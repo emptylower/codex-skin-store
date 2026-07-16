@@ -69,7 +69,9 @@ describe("ThemePreview", () => {
     expect(shell).toBeTruthy();
     expect(shell?.getAttribute("style") ?? shell?.className).toBeTruthy();
 
-    const frame = container.querySelector(".theme-preview__frame") as HTMLElement;
+    const frame = container.querySelector(
+      ".theme-preview__frame",
+    ) as HTMLElement;
     expect(frame).toBeTruthy();
     expect(frame.style.aspectRatio).toBe("16 / 10");
     expect(frame.style.maxHeight).toBe("28rem");

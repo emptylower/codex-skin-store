@@ -18,7 +18,7 @@ import {
   creatorPath,
   themePath,
   type HreflangAlternate,
-} from "~/services/seo/meta.server";
+} from "~/services/seo/meta";
 import {
   absoluteUrl,
   buildBreadcrumbList,
@@ -225,7 +225,9 @@ export default function ThemeDetailPage({ loaderData }: Route.ComponentProps) {
             </div>
           ) : null}
         </dl>
-        <p className="theme-detail__install">{messages.theme.installPrerequisites}</p>
+        <p className="theme-detail__install">
+          {messages.theme.installPrerequisites}
+        </p>
       </section>
 
       <section

@@ -37,9 +37,7 @@ export function buildCreativeWork(options: {
   };
 
   if (options.image) {
-    node.image = options.image.startsWith("http")
-      ? options.image
-      : undefined;
+    node.image = options.image.startsWith("http") ? options.image : undefined;
   }
 
   if (options.dateModified) {

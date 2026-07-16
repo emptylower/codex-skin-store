@@ -8,10 +8,7 @@ const MAX_SLUG_LENGTH = 60;
  * trims hyphens, and caps at 60 characters.
  */
 export function normalizeSlug(input: string): string {
-  const ascii = input
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase();
+  const ascii = input.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
   const slug = ascii
     .replace(/[^a-z0-9]+/g, "-")

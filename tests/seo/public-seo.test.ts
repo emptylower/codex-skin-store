@@ -5,14 +5,20 @@ import {
   loader as creatorLoader,
   meta as creatorMeta,
 } from "~/routes/creator-profile";
-import { loader as marketplaceLoader, meta as marketplaceMeta } from "~/routes/marketplace";
+import {
+  loader as marketplaceLoader,
+  meta as marketplaceMeta,
+} from "~/routes/marketplace";
 import { loader as robotsLoader } from "~/routes/robots[.]txt";
 import { loader as sitemapLoader } from "~/routes/sitemap[.]xml";
 import {
   loader as taxonomyLoader,
   meta as taxonomyMeta,
 } from "~/routes/taxonomy-hub";
-import { loader as themeLoader, meta as themeMeta } from "~/routes/theme-detail";
+import {
+  loader as themeLoader,
+  meta as themeMeta,
+} from "~/routes/theme-detail";
 
 const NOW = 1_700_400_000_000;
 const ORIGIN = env.APP_ORIGIN;
@@ -73,7 +79,12 @@ async function insertTheme(options: {
     media,
     previewImage: `/demo-themes/${slug}-cover.svg`,
     coverImage: `/demo-themes/${slug}.png`,
-    palette: { bg: "#0b1020", fg: "#f8fafc", accent: "#22d3ee", muted: "#94a3b8" },
+    palette: {
+      bg: "#0b1020",
+      fg: "#f8fafc",
+      accent: "#22d3ee",
+      muted: "#94a3b8",
+    },
     focalPoint: { x: 0.5, y: 0.4 },
     overlay: 0.35,
   });
@@ -276,8 +287,8 @@ function findCanonical(tags: Array<Record<string, unknown>>) {
 
 function findAlternates(tags: Array<Record<string, unknown>>) {
   return tags.filter(
-    (tag) => tag.tagName === "link" && tag.rel === "alternate" && tag.hreflang,
-  ) as Array<{ hreflang: string; href: string }>;
+    (tag) => tag.tagName === "link" && tag.rel === "alternate" && tag.hrefLang,
+  ) as Array<{ hrefLang: string; href: string }>;
 }
 
 function findRobots(tags: Array<Record<string, unknown>>) {
@@ -385,26 +396,22 @@ describe("theme SEO meta", () => {
     const enAlts = findAlternates(enTags);
     const zhAlts = findAlternates(zhTags);
     const enByLang = Object.fromEntries(
-      enAlts.map((alt) => [alt.hreflang, alt.href]),
+      enAlts.map((alt) => [alt.hrefLang, alt.href]),
     );
     const zhByLang = Object.fromEntries(
-      zhAlts.map((alt) => [alt.hreflang, alt.href]),
+      zhAlts.map((alt) => [alt.hrefLang, alt.href]),
     );
 
     expect(enByLang.en).toBe(`${ORIGIN}/en/themes/seo-aurora-drive`);
     expect(enByLang["zh-Hans"]).toBe(
       `${ORIGIN}/zh-hans/themes/seo-aurora-drive`,
     );
-    expect(enByLang["x-default"]).toBe(
-      `${ORIGIN}/en/themes/seo-aurora-drive`,
-    );
+    expect(enByLang["x-default"]).toBe(`${ORIGIN}/en/themes/seo-aurora-drive`);
     expect(zhByLang.en).toBe(`${ORIGIN}/en/themes/seo-aurora-drive`);
     expect(zhByLang["zh-Hans"]).toBe(
       `${ORIGIN}/zh-hans/themes/seo-aurora-drive`,
     );
-    expect(zhByLang["x-default"]).toBe(
-      `${ORIGIN}/en/themes/seo-aurora-drive`,
-    );
+    expect(zhByLang["x-default"]).toBe(`${ORIGIN}/en/themes/seo-aurora-drive`);
 
     const enTitle = enTags.find((tag) => "title" in tag) as
       | { title?: string }
@@ -412,12 +419,12 @@ describe("theme SEO meta", () => {
     const zhTitle = zhTags.find((tag) => "title" in tag) as
       | { title?: string }
       | undefined;
-    const enDescription = enTags.find(
-      (tag) => tag.name === "description",
-    ) as { content?: string } | undefined;
-    const zhDescription = zhTags.find(
-      (tag) => tag.name === "description",
-    ) as { content?: string } | undefined;
+    const enDescription = enTags.find((tag) => tag.name === "description") as
+      | { content?: string }
+      | undefined;
+    const zhDescription = zhTags.find((tag) => tag.name === "description") as
+      | { content?: string }
+      | undefined;
 
     expect(enTitle?.title).toContain("SEO Aurora Drive");
     expect(zhTitle?.title).toContain("极光驱动");
@@ -459,7 +466,7 @@ describe("theme SEO meta", () => {
     }) as Array<Record<string, unknown>>;
 
     const alts = findAlternates(tags);
-    const langs = alts.map((alt) => alt.hreflang);
+    const langs = alts.map((alt) => alt.hrefLang);
     expect(langs).toContain("en");
     expect(langs).toContain("x-default");
     expect(langs).not.toContain("zh-Hans");
@@ -509,7 +516,7 @@ describe("marketplace SEO meta", () => {
     expect(findCanonical(tags)?.href).toBe(`${ORIGIN}/en`);
     const alts = findAlternates(tags);
     const byLang = Object.fromEntries(
-      alts.map((alt) => [alt.hreflang, alt.href]),
+      alts.map((alt) => [alt.hrefLang, alt.href]),
     );
     expect(byLang.en).toBe(`${ORIGIN}/en`);
     expect(byLang["zh-Hans"]).toBe(`${ORIGIN}/zh-hans`);
@@ -532,7 +539,7 @@ describe("creator SEO meta", () => {
     }) as Array<Record<string, unknown>>;
 
     const alts = findAlternates(tags);
-    const langs = alts.map((alt) => alt.hreflang);
+    const langs = alts.map((alt) => alt.hrefLang);
     expect(langs).toContain("en");
     expect(langs).toContain("x-default");
     expect(langs).not.toContain("zh-Hans");
@@ -563,12 +570,7 @@ describe("taxonomy SEO meta", () => {
 
   it("indexes populated taxonomy hubs with reciprocal hreflang", async () => {
     const data = await taxonomyLoader(
-      taxonomyArgs(
-        `${ORIGIN}/en/taxonomies/style/neon`,
-        "en",
-        "style",
-        "neon",
-      ),
+      taxonomyArgs(`${ORIGIN}/en/taxonomies/style/neon`, "en", "style", "neon"),
     );
 
     const tags = taxonomyMeta({
@@ -580,7 +582,7 @@ describe("taxonomy SEO meta", () => {
 
     expect(findRobots(tags)?.content ?? "index,follow").not.toMatch(/noindex/i);
     const byLang = Object.fromEntries(
-      findAlternates(tags).map((alt) => [alt.hreflang, alt.href]),
+      findAlternates(tags).map((alt) => [alt.hrefLang, alt.href]),
     );
     expect(byLang.en).toBe(`${ORIGIN}/en/taxonomies/style/neon`);
     expect(byLang["zh-Hans"]).toBe(`${ORIGIN}/zh-hans/taxonomies/style/neon`);

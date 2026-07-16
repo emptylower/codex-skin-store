@@ -9,10 +9,7 @@ import type {
 } from "~/services/marketplace/types";
 
 export interface MarketplaceRepository {
-  list(
-    locale: Locale,
-    filters: MarketplaceFilters,
-  ): Promise<ThemeListResult>;
+  list(locale: Locale, filters: MarketplaceFilters): Promise<ThemeListResult>;
 
   findBySlug(slug: string, locale: Locale): Promise<ThemeDetail | null>;
 

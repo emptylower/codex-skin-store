@@ -29,9 +29,7 @@ export function ThemeCard({
   locale,
 }: ThemeCardProps) {
   const mediaSrc = safeMediaUrl(theme.previewImage ?? theme.coverImage);
-  const href = locale
-    ? localePath(locale, `/themes/${theme.slug}`)
-    : undefined;
+  const href = locale ? localePath(locale, `/themes/${theme.slug}`) : undefined;
 
   return (
     <article className="theme-card" data-testid="theme-card">
@@ -88,7 +86,9 @@ function ThemeCardBody({
         </p>
         <ul className="theme-card__meta">
           <li>
-            <span className="theme-card__meta-label">{filterLabels.platform}</span>
+            <span className="theme-card__meta-label">
+              {filterLabels.platform}
+            </span>
             <span className="theme-card__meta-value">{theme.platform}</span>
           </li>
           <li>
