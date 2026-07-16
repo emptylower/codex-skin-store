@@ -1,5 +1,12 @@
 import { createRequestHandler } from "react-router";
 
+import type { PackageQueueMessage } from "~/platform/ports";
+import {
+  consumePackageMessage,
+  createJobDeps,
+  sweepExpiredJobs,
+} from "~/services/package-jobs.server";
+
 declare module "react-router" {
   export interface AppLoadContext {
     cloudflare: {
@@ -66,4 +73,21 @@ export default {
     });
     return withDocumentSecurityHeaders(response);
   },
-} satisfies ExportedHandler<Env>;
+
+  async queue(batch: MessageBatch<PackageQueueMessage>, env: Env) {
+    // Consumer max_batch_size is 1; still iterate defensively.
+    for (const message of batch.messages) {
+      const deps = createJobDeps(env);
+      const outcome = await consumePackageMessage(deps, message.body);
+      if (outcome.kind === "retry") {
+        message.retry({ delaySeconds: outcome.delaySeconds });
+      } else {
+        message.ack();
+      }
+    }
+  },
+
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(sweepExpiredJobs(createJobDeps(env), new Date()));
+  },
+} satisfies ExportedHandler<Env, PackageQueueMessage>;

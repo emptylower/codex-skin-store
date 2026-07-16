@@ -118,5 +118,8 @@ export type PackageQueueMessage = {
 
 /** PACKAGE_QUEUE producer used after idempotent package_jobs insert. */
 export interface PackageQueue {
-  send(message: PackageQueueMessage): Promise<void>;
+  send(
+    message: PackageQueueMessage,
+    options?: { delaySeconds?: number },
+  ): Promise<void>;
 }
