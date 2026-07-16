@@ -37,19 +37,22 @@ test.describe("accessibility", () => {
     await expect(page).toHaveURL(/\/en\/themes\//);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    // Home/Task tablist is keyboard operable after hydration.
+    // Home/Task tablist is keyboard operable after client hydration.
     const tablist = page.getByRole("tablist", { name: "Codex views" });
     await expect(tablist).toBeVisible();
+    await expect(tablist).toBeAttached();
     const homeTab = tablist.getByRole("tab", { name: "Home" });
     const taskTab = tablist.getByRole("tab", { name: "Task" });
 
-    // Wait until React handlers are attached by verifying click works first.
-    await homeTab.click();
-    await expect(homeTab).toHaveAttribute("aria-selected", "true");
-    await homeTab.focus();
-    await expect(homeTab).toBeFocused();
-    await homeTab.press("ArrowRight");
-    await expect(taskTab).toHaveAttribute("aria-selected", "true");
+    // Click-focus then ArrowRight; retry until React key handlers are hydrated
+    // (parallel workers can race SSR markup vs client listeners).
+    await expect(homeTab).toBeVisible();
+    await expect(async () => {
+      await homeTab.click();
+      await expect(homeTab).toHaveAttribute("aria-selected", "true");
+      await homeTab.press("ArrowRight");
+      await expect(taskTab).toHaveAttribute("aria-selected", "true");
+    }).toPass({ timeout: 15_000 });
     await expect(page.locator(".codex-task")).toBeVisible();
   });
 

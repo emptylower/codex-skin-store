@@ -115,49 +115,49 @@ INSERT INTO theme_versions (
 VALUES
   (
     'tv-neon-road-1', 'theme-neon-road', 1,
-    '{"platform":"both","mode":"dark","media":"static","previewImage":"/demo-themes/neon-road-cover.svg","coverImage":"/demo-themes/neon-road.png","adapters":{"codex":{"shell":"glass","accent":"#22d3ee"}}}',
+    '{"platform":"both","mode":"dark","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/neon-road-cover.svg","coverImage":"/demo-themes/neon-road.png","palette":{"bg":"#0b1020","fg":"#f8fafc","accent":"#22d3ee","muted":"#94a3b8"},"focalX":0.5,"focalY":0.4,"overlay":0.35,"adapters":{"codex":{"shell":"glass","accent":"#22d3ee"}}}',
     'packages/neon-road/v1.zip', 'sha256:neon-road-payload', 'sha256:neon-road-archive',
     1700000200000, 1700000200000, 1700000200000
   ),
   (
     'tv-paper-studio-1', 'theme-paper-studio', 1,
-    '{"platform":"macos","mode":"light","media":"static","previewImage":"/demo-themes/paper-studio-cover.svg","coverImage":"/demo-themes/paper-studio.png","adapters":{"codex":{"shell":"paper","accent":"#a16207"}}}',
+    '{"platform":"macos","mode":"light","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/paper-studio-cover.svg","coverImage":"/demo-themes/paper-studio.png","palette":{"bg":"#faf6ef","fg":"#1c1917","accent":"#a16207","muted":"#78716c"},"focalX":0.48,"focalY":0.42,"overlay":0.28,"adapters":{"codex":{"shell":"paper","accent":"#a16207"}}}',
     'packages/paper-studio/v1.zip', 'sha256:paper-studio-payload', 'sha256:paper-studio-archive',
     1700000201000, 1700000201000, 1700000201000
   ),
   (
     'tv-midnight-harbor-1', 'theme-midnight-harbor', 1,
-    '{"platform":"windows","mode":"dark","media":"static","previewImage":"/demo-themes/midnight-harbor-cover.svg","coverImage":"/demo-themes/midnight-harbor.png","adapters":{"codex":{"shell":"matte","accent":"#38bdf8"}}}',
+    '{"platform":"windows","mode":"dark","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/midnight-harbor-cover.svg","coverImage":"/demo-themes/midnight-harbor.png","palette":{"bg":"#0c1524","fg":"#e2e8f0","accent":"#38bdf8","muted":"#64748b"},"focalX":0.52,"focalY":0.38,"overlay":0.4,"adapters":{"codex":{"shell":"matte","accent":"#38bdf8"}}}',
     'packages/midnight-harbor/v1.zip', 'sha256:midnight-harbor-payload', 'sha256:midnight-harbor-archive',
     1700000202000, 1700000202000, 1700000202000
   ),
   (
     'tv-solar-grove-1', 'theme-solar-grove', 1,
-    '{"platform":"both","mode":"light","media":"static","previewImage":"/demo-themes/solar-grove-cover.svg","coverImage":"/demo-themes/solar-grove.png","adapters":{"codex":{"shell":"organic","accent":"#65a30d"}}}',
+    '{"platform":"both","mode":"light","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/solar-grove-cover.svg","coverImage":"/demo-themes/solar-grove.png","palette":{"bg":"#f4f7ec","fg":"#1a2e05","accent":"#65a30d","muted":"#6b7280"},"focalX":0.5,"focalY":0.35,"overlay":0.3,"adapters":{"codex":{"shell":"organic","accent":"#65a30d"}}}',
     'packages/solar-grove/v1.zip', 'sha256:solar-grove-payload', 'sha256:solar-grove-archive',
     1700000203000, 1700000203000, 1700000203000
   ),
   (
     'tv-frost-terminal-1', 'theme-frost-terminal', 1,
-    '{"platform":"macos","mode":"dark","media":"static","previewImage":"/demo-themes/frost-terminal-cover.svg","coverImage":"/demo-themes/frost-terminal.png","adapters":{"codex":{"shell":"terminal","accent":"#67e8f9"}}}',
+    '{"platform":"macos","mode":"dark","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/frost-terminal-cover.svg","coverImage":"/demo-themes/frost-terminal.png","palette":{"bg":"#07131a","fg":"#ecfeff","accent":"#67e8f9","muted":"#94a3b8"},"focalX":0.45,"focalY":0.4,"overlay":0.38,"adapters":{"codex":{"shell":"terminal","accent":"#67e8f9"}}}',
     'packages/frost-terminal/v1.zip', 'sha256:frost-terminal-payload', 'sha256:frost-terminal-archive',
     1700000204000, 1700000204000, 1700000204000
   ),
   (
     'tv-amber-atelier-1', 'theme-amber-atelier', 1,
-    '{"platform":"windows","mode":"light","media":"static","previewImage":"/demo-themes/amber-atelier-cover.svg","coverImage":"/demo-themes/amber-atelier.png","adapters":{"codex":{"shell":"studio","accent":"#f59e0b"}}}',
+    '{"platform":"windows","mode":"light","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/amber-atelier-cover.svg","coverImage":"/demo-themes/amber-atelier.png","palette":{"bg":"#fff7ed","fg":"#292524","accent":"#f59e0b","muted":"#a8a29e"},"focalX":0.5,"focalY":0.42,"overlay":0.32,"adapters":{"codex":{"shell":"studio","accent":"#f59e0b"}}}',
     'packages/amber-atelier/v1.zip', 'sha256:amber-atelier-payload', 'sha256:amber-atelier-archive',
     1700000205000, 1700000205000, 1700000205000
   ),
   (
     'tv-pixel-arcade-1', 'theme-pixel-arcade', 1,
-    '{"platform":"both","mode":"dark","media":"static","previewImage":"/demo-themes/pixel-arcade-cover.svg","coverImage":"/demo-themes/pixel-arcade.png","adapters":{"codex":{"shell":"pixel","accent":"#f472b6"}}}',
+    '{"platform":"both","mode":"dark","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/pixel-arcade-cover.svg","coverImage":"/demo-themes/pixel-arcade.png","palette":{"bg":"#12081a","fg":"#fdf4ff","accent":"#f472b6","muted":"#a78bfa"},"focalX":0.55,"focalY":0.4,"overlay":0.36,"adapters":{"codex":{"shell":"pixel","accent":"#f472b6"}}}',
     'packages/pixel-arcade/v1.zip', 'sha256:pixel-arcade-payload', 'sha256:pixel-arcade-archive',
     1700000206000, 1700000206000, 1700000206000
   ),
   (
     'tv-ink-scroll-1', 'theme-ink-scroll', 1,
-    '{"platform":"macos","mode":"light","media":"static","previewImage":"/demo-themes/ink-scroll-cover.svg","coverImage":"/demo-themes/ink-scroll.png","adapters":{"codex":{"shell":"scroll","accent":"#1f2937"}}}',
+    '{"platform":"macos","mode":"light","media":"static","license":"CC-BY-4.0","previewImage":"/demo-themes/ink-scroll-cover.svg","coverImage":"/demo-themes/ink-scroll.png","palette":{"bg":"#f5f5f4","fg":"#1f2937","accent":"#1f2937","muted":"#78716c"},"focalX":0.5,"focalY":0.4,"overlay":0.3,"adapters":{"codex":{"shell":"scroll","accent":"#1f2937"}}}',
     'packages/ink-scroll/v1.zip', 'sha256:ink-scroll-payload', 'sha256:ink-scroll-archive',
     1700000207000, 1700000207000, 1700000207000
   )

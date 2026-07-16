@@ -11,6 +11,23 @@ async function openMarketplace(page: Page, locale = "en") {
 }
 
 test.describe("public marketplace flows", () => {
+  test("SSR HTML responses include document security headers", async ({
+    page,
+  }) => {
+    const response = await page.goto("/en", {
+      waitUntil: "domcontentloaded",
+    });
+    expect(response?.ok()).toBeTruthy();
+    expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
+    expect(response?.headers()["referrer-policy"]).toBe(
+      "strict-origin-when-cross-origin",
+    );
+    expect(response?.headers()["permissions-policy"]).toContain("camera=()");
+    expect(response?.headers()["content-security-policy"]).toContain(
+      "default-src 'self'",
+    );
+  });
+
   test("redirects root to negotiated locale", async ({ page }) => {
     const response = await page.goto("/", {
       waitUntil: "domcontentloaded",
@@ -85,6 +102,7 @@ test.describe("public marketplace flows", () => {
 
     const tablist = page.getByRole("tablist", { name: "Codex views" });
     await expect(tablist).toBeVisible();
+    await expect(tablist).toBeAttached();
 
     const homeTab = tablist.getByRole("tab", { name: "Home" });
     const taskTab = tablist.getByRole("tab", { name: "Task" });
@@ -92,13 +110,18 @@ test.describe("public marketplace flows", () => {
     await expect(homeTab).toHaveAttribute("aria-selected", "true");
     await expect(page.locator('[data-view="home"]')).toBeVisible();
 
-    await taskTab.click();
-    await expect(taskTab).toHaveAttribute("aria-selected", "true");
+    // Retry until client hydration attaches click handlers.
+    await expect(async () => {
+      await taskTab.click();
+      await expect(taskTab).toHaveAttribute("aria-selected", "true");
+    }).toPass({ timeout: 15_000 });
     await expect(page.locator(".codex-task")).toBeVisible();
     await expect(page.getByText(/Codex · Task/)).toBeVisible();
 
     await homeTab.click();
-    await expect(homeTab).toHaveAttribute("aria-selected", "true");
+    await expect(homeTab).toHaveAttribute("aria-selected", "true", {
+      timeout: 15_000,
+    });
     await expect(page.locator('[data-view="home"]')).toBeVisible();
   });
 

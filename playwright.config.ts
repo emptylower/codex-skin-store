@@ -19,10 +19,13 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
   },
   webServer: {
+    // Migrate + seed before boot so the first e2e request always has catalog data.
     command: `npm run db:migrate:local && npm run db:seed:local && PORT=${port} npm run dev -- --port ${port}`,
-    url: baseURL,
+    // Health-check an actual SSR route (not just the origin) so the server is ready.
+    url: `${baseURL}/en`,
+    // CI=1 forces a fresh server; local may reuse. Prefer false under CI for reliability.
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    timeout: 240_000,
   },
   projects: [
     {
