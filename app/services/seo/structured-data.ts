@@ -126,3 +126,58 @@ export function taxonomyBreadcrumbs(options: {
     { name: options.label, path: options.path },
   ];
 }
+
+/**
+ * Collection / landing ItemList. Never include AggregateRating.
+ */
+export function buildItemList(options: {
+  name: string;
+  url: string;
+  items: Array<{ name: string; url: string }>;
+}): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: options.name,
+    url: options.url,
+    numberOfItems: options.items.length,
+    itemListElement: options.items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: item.url,
+    })),
+  };
+}
+
+export function buildComment(options: {
+  text: string;
+  authorName: string;
+  dateCreated?: number;
+}): JsonLd {
+  const node: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Comment",
+    text: options.text,
+    author: {
+      "@type": "Person",
+      name: options.authorName,
+    },
+  };
+  if (options.dateCreated) {
+    node.dateCreated = new Date(options.dateCreated).toISOString();
+  }
+  return node;
+}
+
+/** Guard: structured data builders must never emit AggregateRating. */
+export function assertNoAggregateRating(nodes: JsonLd | JsonLd[]): void {
+  const list = Array.isArray(nodes) ? nodes : [nodes];
+  for (const node of list) {
+    const raw = JSON.stringify(node);
+    if (raw.includes("AggregateRating")) {
+      throw new Error("aggregate_rating_forbidden");
+    }
+  }
+}
+

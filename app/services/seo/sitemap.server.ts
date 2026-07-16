@@ -2,6 +2,7 @@ import type { Locale } from "~/i18n/config";
 import { localePath, locales } from "~/i18n/config";
 import type {
   CreatorSitemapCandidate,
+  LandingSitemapCandidate,
   SeoRepository,
   SitemapUrlRecord,
   TaxonomySitemapCandidate,
@@ -16,6 +17,12 @@ import { absoluteUrl } from "./structured-data";
 import { creatorPath, policyPath, taxonomyPath, themePath } from "./meta";
 
 const POLICY_PAGES = ["terms", "privacy", "copyright", "about"] as const;
+/** MVP cap for active programmatic landing URLs in the sitemap. */
+export const MAX_SITEMAP_LANDING_URLS = 100;
+
+export function landingPath(locale: Locale, slug: string): string {
+  return localePath(locale, `/l/${slug}`);
+}
 
 export type SeoService = {
   buildSitemapXml(origin: string): Promise<string>;
@@ -143,6 +150,23 @@ function expandTaxonomyUrls(
   return urls;
 }
 
+function expandLandingUrls(
+  origin: string,
+  landings: LandingSitemapCandidate[],
+): SitemapUrlRecord[] {
+  const sorted = [...landings].sort((a, b) => {
+    const batchA = a.rolloutBatch ?? Number.MAX_SAFE_INTEGER;
+    const batchB = b.rolloutBatch ?? Number.MAX_SAFE_INTEGER;
+    if (batchA !== batchB) return batchA - batchB;
+    return a.slug.localeCompare(b.slug);
+  });
+
+  return sorted.slice(0, MAX_SITEMAP_LANDING_URLS).map((landing) => ({
+    loc: absoluteUrl(origin, landingPath(landing.locale, landing.slug)),
+    lastmod: landing.updatedAt,
+  }));
+}
+
 export function renderSitemapXml(urls: SitemapUrlRecord[]): string {
   const entries = urls
     .map((entry) => urlEntry(entry.loc, formatLastmod(entry.lastmod)))
@@ -172,10 +196,13 @@ export function createSeoService(repo: SeoRepository): SeoService {
   return {
     async buildSitemapXml(origin: string) {
       const now = Date.now();
-      const [themes, creators, taxonomies] = await Promise.all([
+      const [themes, creators, taxonomies, landings] = await Promise.all([
         repo.listThemeSitemapCandidates(),
         repo.listCreatorSitemapCandidates(),
         repo.listTaxonomySitemapCandidates(),
+        repo.listLandingSitemapCandidates
+          ? repo.listLandingSitemapCandidates()
+          : Promise.resolve([] as LandingSitemapCandidate[]),
       ]);
 
       const urls: SitemapUrlRecord[] = [
@@ -183,6 +210,7 @@ export function createSeoService(repo: SeoRepository): SeoService {
         ...expandThemeUrls(origin, themes),
         ...expandCreatorUrls(origin, creators),
         ...expandTaxonomyUrls(origin, taxonomies),
+        ...expandLandingUrls(origin, landings),
         ...collectPolicyUrls(origin, now),
       ];
 
