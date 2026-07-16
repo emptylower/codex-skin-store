@@ -5,6 +5,10 @@ import type {
   PackageQueueMessage,
   SourceObjectStore,
 } from "~/platform/ports";
+import {
+  processPackageJob as defaultProcessPackageJob,
+  type BuilderDeps,
+} from "~/services/package-builder.server";
 
 /** Lease duration: 5 minutes. */
 export const LEASE_MS = 300_000;
@@ -59,12 +63,16 @@ export type PackageJobDeps = {
   db: D1Database;
   queue: PackageQueue;
   sources: SourceObjectStore;
-  /** Optional PACKAGES binding for staging/zips cleanup. */
-  packages?: Pick<R2Bucket, "list" | "delete"> | null;
+  /** Optional PACKAGES binding for staging/zips cleanup and builder writes. */
+  packages?: R2Bucket | Pick<R2Bucket, "list" | "delete"> | null;
   workerId?: string;
+  /** Images binding for package preparation (optional in job-only tests). */
+  images?: ImagesBinding;
+  reencodeLargeSource?: BuilderDeps["reencodeLargeSource"];
+  enableGif?: boolean;
+  zipFlag?: string | null;
   /**
-   * Injectable package builder hook (Task 7). Defaults to success no-op so Task 4
-   * can focus on lease/retry/sweep without the full builder.
+   * Injectable package builder hook. Defaults to buildPackageVersion pipeline.
    */
   processPackageJob?: (job: PackageJobRow) => Promise<void>;
 };
@@ -352,8 +360,27 @@ export async function consumePackageMessage(
 
   const process =
     deps.processPackageJob ??
-    (async () => {
-      // Task 4 stub: success no-op until package builder lands.
+    (async (job: PackageJobRow) => {
+      if (!deps.packages || !("put" in deps.packages) || !deps.images) {
+        throw new PackageJobError(
+          "builder_bindings_missing",
+          true,
+          "PACKAGES and IMAGES required for package build",
+        );
+      }
+      await defaultProcessPackageJob(
+        {
+          db: deps.db,
+          sources: deps.sources,
+          packages: deps.packages as R2Bucket,
+          images: deps.images,
+          reencodeLargeSource: deps.reencodeLargeSource ?? null,
+          enableGif: deps.enableGif === true,
+          zipFlag: deps.zipFlag,
+          jobId: job.id,
+        },
+        job,
+      );
     });
 
   try {
@@ -564,6 +591,8 @@ export function createJobDeps(
     queue: createPackageQueue(env.PACKAGE_QUEUE),
     sources: createSourceObjectStore(env.SOURCES),
     packages: env.PACKAGES,
+    images: env.IMAGES,
+    enableGif: false,
     workerId: crypto.randomUUID(),
     ...overrides,
   };

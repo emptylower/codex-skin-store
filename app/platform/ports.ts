@@ -84,13 +84,38 @@ export type SourceObjectHead = {
   customMetadata: Record<string, string>;
 };
 
+export type SourcePutOptions = {
+  httpMetadata?: { contentType?: string };
+  customMetadata?: Record<string, string>;
+};
+
+export type MoveQuarantineToSourceInput = {
+  quarantineKey: string;
+  sourceKey: string;
+  sha256: string;
+  contentType: string;
+};
+
 /**
- * Private SOURCES bucket operations used by the upload completion path.
+ * Private SOURCES bucket operations used by upload completion and package build.
  * Tests inject an in-memory implementation.
  */
 export interface SourceObjectStore {
   head(key: string): Promise<SourceObjectHead | null>;
   delete(key: string): Promise<void>;
+  /** Optional: read object bytes (package builder). */
+  get?(key: string): Promise<Uint8Array | null>;
+  /** Optional: put immutable source bytes. */
+  put?(
+    key: string,
+    body: Uint8Array,
+    options?: SourcePutOptions,
+  ): Promise<void>;
+  /**
+   * Promote quarantine object to immutable source key (copy + delete).
+   * Idempotent when source already exists with matching sha256.
+   */
+  moveQuarantineToSource?(input: MoveQuarantineToSourceInput): Promise<void>;
 }
 
 export type PresignPutInput = {
