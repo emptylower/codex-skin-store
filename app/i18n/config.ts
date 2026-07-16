@@ -7,8 +7,15 @@ export function parseLocale(value: string): Locale | null {
 }
 
 export function localePath(locale: Locale, path = "") {
+  if (!path || path === "/") return `/${locale}`;
   return `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+/** Shared shape for route loaders that expose locale for document lang. */
+export type LocaleLoaderData = {
+  locale: Locale;
+  htmlLang: string;
+};
 
 /** Map app locale codes to BCP 47 language tags for the html lang attribute. */
 export function htmlLang(locale: Locale): string {

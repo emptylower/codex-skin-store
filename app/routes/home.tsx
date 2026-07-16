@@ -1,4 +1,8 @@
-import { htmlLang, parseLocale } from "~/i18n/config";
+import {
+  htmlLang,
+  parseLocale,
+  type LocaleLoaderData,
+} from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import type { Route } from "./+types/home";
 
@@ -18,9 +22,13 @@ export function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  return {
+  const localeData: LocaleLoaderData = {
     locale,
     htmlLang: htmlLang(locale),
+  };
+
+  return {
+    ...localeData,
     origin: context.cloudflare.env.APP_ORIGIN,
     messages: getMessages(locale),
   };

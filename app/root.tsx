@@ -8,7 +8,12 @@ import {
   useMatches,
 } from "react-router";
 
-import { defaultLocale, htmlLang, parseLocale } from "~/i18n/config";
+import {
+  defaultLocale,
+  htmlLang,
+  parseLocale,
+  type LocaleLoaderData,
+} from "~/i18n/config";
 import type { Route } from "./+types/root";
 import "./styles/app.css";
 
@@ -25,16 +30,11 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-type LocaleRouteData = {
-  htmlLang?: string;
-  locale?: string;
-};
-
 /** Prefer validated loader data (deepest match) over pathname parsing. */
 function useDocumentLang(): string {
   const matches = useMatches();
   for (const match of matches.slice().reverse()) {
-    const data = match.data as LocaleRouteData | undefined;
+    const data = match.data as Partial<LocaleLoaderData> | undefined;
     if (data?.htmlLang) return data.htmlLang;
     const locale = data?.locale ? parseLocale(data.locale) : null;
     if (locale) return htmlLang(locale);
