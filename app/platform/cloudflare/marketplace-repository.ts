@@ -33,7 +33,12 @@ type ManifestFacts = {
   raw: Record<string, unknown>;
 };
 
-function parseManifest(manifestJson: string): ManifestFacts {
+/**
+ * Parse marketplace facts from theme_versions.manifest_json.
+ * Fail closed: missing/invalid platform, mode, or media yields null so the
+ * theme is excluded from public list/detail rather than defaulted.
+ */
+function parseManifest(manifestJson: string): ManifestFacts | null {
   let parsed: Record<string, unknown> = {};
   try {
     const value = JSON.parse(manifestJson) as unknown;
@@ -41,24 +46,30 @@ function parseManifest(manifestJson: string): ManifestFacts {
       parsed = value as Record<string, unknown>;
     }
   } catch {
-    parsed = {};
+    return null;
   }
 
   const platformRaw = parsed.platform;
-  const platform: MarketplacePlatform =
-    platformRaw === "macos" ||
-    platformRaw === "windows" ||
-    platformRaw === "both"
-      ? platformRaw
-      : "both";
+  if (
+    platformRaw !== "macos" &&
+    platformRaw !== "windows" &&
+    platformRaw !== "both"
+  ) {
+    return null;
+  }
+  const platform: MarketplacePlatform = platformRaw;
 
   const modeRaw = parsed.mode;
-  const mode: MarketplaceMode =
-    modeRaw === "light" || modeRaw === "dark" ? modeRaw : "dark";
+  if (modeRaw !== "light" && modeRaw !== "dark") {
+    return null;
+  }
+  const mode: MarketplaceMode = modeRaw;
 
   const mediaRaw = parsed.media;
-  const media: MarketplaceMedia =
-    mediaRaw === "animated" || mediaRaw === "static" ? mediaRaw : "static";
+  if (mediaRaw !== "animated" && mediaRaw !== "static") {
+    return null;
+  }
+  const media: MarketplaceMedia = mediaRaw;
 
   const previewImage =
     typeof parsed.previewImage === "string" ? parsed.previewImage : null;
@@ -78,15 +89,23 @@ function matchesPlatform(
   return themePlatform === filter || themePlatform === "both";
 }
 
+/**
+ * Map filter tokens to controlled taxonomy keys only.
+ * Unknown tokens are dropped (no free-form fallback).
+ */
 function normalizeTaxonomyFilters(inputs: string[]): string[] {
   const keys = new Set<string>();
   for (const input of inputs) {
-    const canonical = normalizeTaxonomyInput(input) ?? input.trim().toLowerCase();
+    const canonical = normalizeTaxonomyInput(input);
     if (canonical) {
       keys.add(canonical);
     }
   }
   return [...keys];
+}
+
+function hasTaxonomyFilterInput(inputs: string[]): boolean {
+  return inputs.some((input) => input.trim().length > 0);
 }
 
 type JoinedThemeRow = {
@@ -160,6 +179,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     if (!listItem) return null;
 
     const manifest = parseManifest(row.version.manifestJson);
+    if (!manifest) return null;
 
     return {
       ...listItem,
@@ -328,6 +348,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     if (!isPubliclyListable(row.theme)) return null;
 
     const manifest = parseManifest(row.version.manifestJson);
+    if (!manifest) return null;
 
     return {
       id: row.theme.id,
@@ -371,8 +392,13 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       result = result.filter((item) => item.media === filters.media);
     }
 
-    const taxonomyKeys = normalizeTaxonomyFilters(filters.taxonomy);
-    if (taxonomyKeys.length > 0) {
+    // Strict controlled taxonomy: unknown tokens are dropped; if the caller
+    // provided only unknown keys, match nothing (empty list).
+    if (hasTaxonomyFilterInput(filters.taxonomy)) {
+      const taxonomyKeys = normalizeTaxonomyFilters(filters.taxonomy);
+      if (taxonomyKeys.length === 0) {
+        return [];
+      }
       result = result.filter((item) =>
         taxonomyKeys.every((key) => item.taxonomyKeys.includes(key)),
       );

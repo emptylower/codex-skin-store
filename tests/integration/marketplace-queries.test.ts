@@ -31,6 +31,7 @@ async function insertTheme(options: {
   visibility?: string;
   moderationStatus?: string;
   packageStatus?: string;
+  currentVersion?: number | null;
   downloads?: number;
   createdAt?: number;
 }) {
@@ -41,6 +42,7 @@ async function insertTheme(options: {
     visibility = "public",
     moderationStatus = "clean",
     packageStatus = "ready",
+    currentVersion = 1,
     downloads = 10,
     createdAt = NOW,
   } = options;
@@ -50,12 +52,13 @@ async function insertTheme(options: {
        id, author_id, slug, source_locale, current_version,
        visibility, moderation_status, package_status,
        favorites_count, downloads_count, created_at, updated_at
-     ) VALUES (?, ?, ?, 'en', 1, ?, ?, ?, 0, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, 'en', ?, ?, ?, ?, 0, ?, ?, ?)`,
   )
     .bind(
       id,
       authorId,
       slug,
+      currentVersion,
       visibility,
       moderationStatus,
       packageStatus,
@@ -293,6 +296,124 @@ beforeAll(async () => {
     name: "仅中文",
     status: "reviewed",
   });
+
+  // package_status processing — excluded from public results
+  await insertTheme({
+    id: "theme-mq-processing",
+    authorId: "user-mq-alice",
+    slug: "mq-processing",
+    packageStatus: "processing",
+    downloads: 77,
+  });
+  await insertVersion("tv-mq-processing", "theme-mq-processing", {
+    platform: "both",
+    mode: "dark",
+    media: "static",
+  });
+  await insertTranslation({
+    id: "tr-mq-processing-en",
+    themeId: "theme-mq-processing",
+    locale: "en",
+    name: "MQ Processing",
+  });
+
+  // package_status failed — excluded
+  await insertTheme({
+    id: "theme-mq-failed",
+    authorId: "user-mq-alice",
+    slug: "mq-failed",
+    packageStatus: "failed",
+    downloads: 66,
+  });
+  await insertVersion("tv-mq-failed", "theme-mq-failed", {
+    platform: "both",
+    mode: "dark",
+    media: "static",
+  });
+  await insertTranslation({
+    id: "tr-mq-failed-en",
+    themeId: "theme-mq-failed",
+    locale: "en",
+    name: "MQ Failed",
+  });
+
+  // visibility draft — excluded
+  await insertTheme({
+    id: "theme-mq-draft",
+    authorId: "user-mq-bob",
+    slug: "mq-draft",
+    visibility: "draft",
+    downloads: 55,
+  });
+  await insertVersion("tv-mq-draft", "theme-mq-draft", {
+    platform: "macos",
+    mode: "light",
+    media: "static",
+  });
+  await insertTranslation({
+    id: "tr-mq-draft-en",
+    themeId: "theme-mq-draft",
+    locale: "en",
+    name: "MQ Draft",
+  });
+
+  // visibility hidden — excluded
+  await insertTheme({
+    id: "theme-mq-hidden",
+    authorId: "user-mq-bob",
+    slug: "mq-hidden",
+    visibility: "hidden",
+    downloads: 44,
+  });
+  await insertVersion("tv-mq-hidden", "theme-mq-hidden", {
+    platform: "windows",
+    mode: "dark",
+    media: "static",
+  });
+  await insertTranslation({
+    id: "tr-mq-hidden-en",
+    themeId: "theme-mq-hidden",
+    locale: "en",
+    name: "MQ Hidden",
+  });
+
+  // current_version null — excluded even if a version row exists
+  await insertTheme({
+    id: "theme-mq-no-current",
+    authorId: "user-mq-alice",
+    slug: "mq-no-current",
+    currentVersion: null,
+    downloads: 33,
+  });
+  await insertVersion("tv-mq-no-current", "theme-mq-no-current", {
+    platform: "both",
+    mode: "light",
+    media: "static",
+  });
+  await insertTranslation({
+    id: "tr-mq-no-current-en",
+    themeId: "theme-mq-no-current",
+    locale: "en",
+    name: "MQ No Current",
+  });
+
+  // Invalid manifest facts (missing media / bad platform) — fail closed
+  await insertTheme({
+    id: "theme-mq-bad-manifest",
+    authorId: "user-mq-bob",
+    slug: "mq-bad-manifest",
+    downloads: 22,
+  });
+  await insertVersion("tv-mq-bad-manifest", "theme-mq-bad-manifest", {
+    platform: "linux",
+    mode: "dark",
+  });
+  await insertTranslation({
+    id: "tr-mq-bad-manifest-en",
+    themeId: "theme-mq-bad-manifest",
+    locale: "en",
+    name: "MQ Bad Manifest",
+  });
 });
 
 describe("marketplaceFilterSchema", () => {
@@ -335,6 +456,48 @@ describe("marketplace public queries", () => {
     expect(slugs).not.toContain("mq-unlisted");
     expect(slugs).not.toContain("mq-removed");
     expect(slugs).not.toContain("mq-untranslated");
+    expect(slugs).not.toContain("mq-processing");
+    expect(slugs).not.toContain("mq-failed");
+    expect(slugs).not.toContain("mq-draft");
+    expect(slugs).not.toContain("mq-hidden");
+    expect(slugs).not.toContain("mq-no-current");
+    expect(slugs).not.toContain("mq-bad-manifest");
+  });
+
+  it("excludes processing and failed package_status from public list and detail", async () => {
+    const result = await services.marketplace.listThemes("en", {});
+    const slugs = result.items.map((item) => item.slug);
+
+    expect(slugs).not.toContain("mq-processing");
+    expect(slugs).not.toContain("mq-failed");
+    expect(await services.marketplace.getTheme("mq-processing", "en")).toBeNull();
+    expect(await services.marketplace.getTheme("mq-failed", "en")).toBeNull();
+  });
+
+  it("excludes draft and hidden visibility from public list and detail", async () => {
+    const result = await services.marketplace.listThemes("en", {});
+    const slugs = result.items.map((item) => item.slug);
+
+    expect(slugs).not.toContain("mq-draft");
+    expect(slugs).not.toContain("mq-hidden");
+    expect(await services.marketplace.getTheme("mq-draft", "en")).toBeNull();
+    expect(await services.marketplace.getTheme("mq-hidden", "en")).toBeNull();
+  });
+
+  it("excludes themes with null current_version from public list and detail", async () => {
+    const result = await services.marketplace.listThemes("en", {});
+    expect(result.items.map((item) => item.slug)).not.toContain("mq-no-current");
+    expect(await services.marketplace.getTheme("mq-no-current", "en")).toBeNull();
+  });
+
+  it("excludes themes with invalid manifest platform/mode/media", async () => {
+    const result = await services.marketplace.listThemes("en", {});
+    expect(result.items.map((item) => item.slug)).not.toContain(
+      "mq-bad-manifest",
+    );
+    expect(
+      await services.marketplace.getTheme("mq-bad-manifest", "en"),
+    ).toBeNull();
   });
 
   it("uses only the requested locale translation for list cards", async () => {
@@ -389,6 +552,33 @@ describe("marketplace public queries", () => {
       taxonomy: ["赛博"],
     });
     expect(neonSynonym.items.map((i) => i.slug).sort()).toEqual([
+      "mq-both-shell",
+      "mq-light-mac",
+    ]);
+  });
+
+  it("applies multi-taxonomy filters with AND semantics", async () => {
+    const neonAndDark = await services.marketplace.listThemes("en", {
+      taxonomy: ["neon", "dark"],
+    });
+    expect(neonAndDark.items.map((i) => i.slug)).toEqual(["mq-both-shell"]);
+
+    const neonAndMinimal = await services.marketplace.listThemes("en", {
+      taxonomy: ["neon", "minimal"],
+    });
+    expect(neonAndMinimal.items).toEqual([]);
+  });
+
+  it("returns empty results when only unknown taxonomy keys are provided", async () => {
+    const unknown = await services.marketplace.listThemes("en", {
+      taxonomy: ["not-a-real-taxonomy-key"],
+    });
+    expect(unknown.items).toEqual([]);
+
+    const mixed = await services.marketplace.listThemes("en", {
+      taxonomy: ["not-a-real-taxonomy-key", "neon"],
+    });
+    expect(mixed.items.map((i) => i.slug).sort()).toEqual([
       "mq-both-shell",
       "mq-light-mac",
     ]);
