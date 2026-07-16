@@ -18,6 +18,15 @@ export default defineConfig(async () => {
         miniflare: {
           bindings: {
             TEST_MIGRATIONS: migrations,
+            // Auth secrets for local/worker tests (not real credentials).
+            BETTER_AUTH_SECRET: "test-better-auth-secret-at-least-32-chars",
+            GOOGLE_CLIENT_ID: "test-google-client-id",
+            GOOGLE_CLIENT_SECRET: "test-google-client-secret",
+            GITHUB_CLIENT_ID: "test-github-client-id",
+            GITHUB_CLIENT_SECRET: "test-github-client-secret",
+            R2_ACCOUNT_ID: "test-r2-account-id",
+            R2_ACCESS_KEY_ID: "test-r2-access-key-id",
+            R2_SECRET_ACCESS_KEY: "test-r2-secret-access-key",
           },
         },
       }),

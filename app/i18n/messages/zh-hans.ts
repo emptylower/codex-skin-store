@@ -78,6 +78,10 @@ export const messages = {
   breadcrumbs: {
     home: "首页",
   },
+  auth: {
+    signIn: "登录",
+    profile: "个人资料",
+  },
   policy: {
     terms: "服务条款",
     termsBody:

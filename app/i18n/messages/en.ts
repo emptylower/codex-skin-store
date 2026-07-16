@@ -76,6 +76,10 @@ export const messages = {
   breadcrumbs: {
     home: "Home",
   },
+  auth: {
+    signIn: "Sign in",
+    profile: "Your profile",
+  },
   policy: {
     terms: "Terms of Service",
     termsBody:

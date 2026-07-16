@@ -14,8 +14,39 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "SOURCES",
+      "bucket_name": "codex-skin-store-sources",
+      "preview_bucket_name": "codex-skin-store-sources-preview"
+    },
+    {
+      "binding": "PACKAGES",
+      "bucket_name": "codex-skin-store-packages",
+      "preview_bucket_name": "codex-skin-store-packages-preview"
+    }
+  ],
+  "queues": {
+    "producers": [
+      { "binding": "PACKAGE_QUEUE", "queue": "codex-skin-store-packages" }
+    ],
+    "consumers": [
+      {
+        "queue": "codex-skin-store-packages",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 8,
+        "retry_delay": 30,
+        "dead_letter_queue": "codex-skin-store-packages-dlq"
+      }
+    ]
+  },
+  "images": { "binding": "IMAGES" },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "vars": {
     "APP_ORIGIN": "http://localhost:5173",
-    "DEFAULT_LOCALE": "en"
+    "DEFAULT_LOCALE": "en",
+    "ENABLE_GIF_UPLOADS": "false",
+    "ZIP_WRITER": "fflate"
   }
 }

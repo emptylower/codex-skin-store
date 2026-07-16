@@ -6,21 +6,9 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey(),
-  handle: text("handle").notNull().unique(),
-  displayName: text("display_name").notNull(),
-  avatarUrl: text("avatar_url"),
-  bio: text("bio").notNull().default(""),
-  role: text("role", { enum: ["user", "moderator", "admin"] })
-    .notNull()
-    .default("user"),
-  uploadStatus: text("upload_status", { enum: ["active", "suspended"] })
-    .notNull()
-    .default("active"),
-  createdAt: integer("created_at").notNull(),
-  updatedAt: integer("updated_at").notNull(),
-});
+// Identity owns the users table mapping (extended for Better Auth).
+export { users } from "./identity";
+import { users } from "./identity";
 
 export const themes = sqliteTable("themes", {
   id: text("id").primaryKey(),
@@ -64,6 +52,32 @@ export const themeVersions = sqliteTable(
     publishedAt: integer("published_at"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
+    // Creator pipeline columns (migration 0002).
+    creatorInputJson: text("creator_input_json"),
+    generationState: text("generation_state", {
+      enum: ["awaiting_upload", "queued", "processing", "ready", "failed"],
+    })
+      .notNull()
+      .default("ready"),
+    sourceKey: text("source_key"),
+    sourceFilename: text("source_filename"),
+    sourceMime: text("source_mime"),
+    sourceBytes: integer("source_bytes"),
+    sourceWidth: integer("source_width"),
+    sourceHeight: integer("source_height"),
+    sourceSha256: text("source_sha256"),
+    previewKey: text("preview_key"),
+    previewBytes: integer("preview_bytes"),
+    previewSha256: text("preview_sha256"),
+    manifestKey: text("manifest_key"),
+    macosAdapterKey: text("macos_adapter_key"),
+    windowsAdapterKey: text("windows_adapter_key"),
+    installKey: text("install_key"),
+    promptKey: text("prompt_key"),
+    archiveBytes: integer("archive_bytes"),
+    generatedAt: integer("generated_at"),
+    generationErrorCode: text("generation_error_code"),
+    generationErrorDetail: text("generation_error_detail"),
   },
   (table) => [unique().on(table.themeId, table.version)],
 );
