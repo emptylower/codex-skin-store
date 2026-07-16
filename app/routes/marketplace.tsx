@@ -14,6 +14,11 @@ import {
   type MarketplaceFilters,
   type ThemeListItem,
 } from "~/services/marketplace/types";
+import { isIndexableMarketplace } from "~/services/seo/index-policy";
+import {
+  buildBasicMeta,
+  localeRootAlternates,
+} from "~/services/seo/meta.server";
 import type { Route } from "./+types/marketplace";
 
 function emptyToUndefined(value: string | null): string | undefined {
@@ -115,33 +120,21 @@ export function meta({ data }: Route.MetaArgs) {
   }
 
   const title = `Codex Skin Store · ${data.messages.marketplace.heading}`;
-  const tags: Array<
-    | { title: string }
-    | { name: string; content: string }
-  > = [
-    { title },
-    {
-      name: "description",
-      content: data.messages.marketplace.description,
-    },
-  ];
+  const description = data.messages.marketplace.description;
+  const canonicalPath = localePath(data.locale);
+  const indexable =
+    !data.filterError && isIndexableMarketplace(data.filters);
 
-  if (data.filterError || (data.filters && hasActiveFilters(data.filters))) {
-    tags.push({ name: "robots", content: "noindex,follow" });
-  }
-
-  return tags;
-}
-
-function hasActiveFilters(filters: MarketplaceFilters): boolean {
-  return Boolean(
-    filters.q ||
-      filters.platform ||
-      filters.mode ||
-      filters.media ||
-      filters.taxonomy.length > 0 ||
-      (filters.sort && filters.sort !== "trending"),
-  );
+  return buildBasicMeta({
+    title,
+    description,
+    origin: data.origin,
+    // Filtered / invalid query pages still canonicalize to the locale root.
+    canonicalPath,
+    indexable,
+    alternates: indexable ? localeRootAlternates() : undefined,
+    ogType: "website",
+  });
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {

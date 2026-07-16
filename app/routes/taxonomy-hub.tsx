@@ -3,12 +3,23 @@ import { ThemeCard } from "~/components/theme-card";
 import {
   htmlLang,
   localePath,
+  locales,
   parseLocale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import { createServices } from "~/services/create-services.server";
 import type { MarketplaceFilters } from "~/services/marketplace/types";
+import { isIndexableTaxonomy } from "~/services/seo/index-policy";
+import {
+  buildBasicMeta,
+  taxonomyPath,
+  type HreflangAlternate,
+} from "~/services/seo/meta.server";
+import {
+  buildBreadcrumbList,
+  taxonomyBreadcrumbs,
+} from "~/services/seo/structured-data";
 import type { Route } from "./+types/taxonomy-hub";
 
 type TaxonomyDimension = NonNullable<MarketplaceFilters["taxonomyDimension"]>;
@@ -29,13 +40,44 @@ export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: "Codex Skin Store" }];
   }
-  return [
-    { title: `${data.taxonomy.label} · Codex Skin Store` },
-    {
-      name: "description",
-      content: `${data.taxonomy.label} themes for Codex Desktop.`,
-    },
+
+  const { taxonomy, locale, origin, messages } = data;
+  const canonicalPath = taxonomyPath(locale, taxonomy.dimension, taxonomy.key);
+  const title = `${taxonomy.label} · Codex Skin Store`;
+  const description = `${taxonomy.label} themes for Codex Desktop.`;
+  const indexable = isIndexableTaxonomy({
+    exists: true,
+    dimension: taxonomy.dimension,
+    key: taxonomy.key,
+  });
+
+  const alternates: HreflangAlternate[] = locales.map((code) => ({
+    locale: code,
+    path: taxonomyPath(code, taxonomy.dimension, taxonomy.key),
+  }));
+
+  const structuredData = [
+    buildBreadcrumbList(
+      origin,
+      taxonomyBreadcrumbs({
+        locale,
+        homeLabel: messages.breadcrumbs.home,
+        label: taxonomy.label,
+        path: canonicalPath,
+      }),
+    ),
   ];
+
+  return buildBasicMeta({
+    title,
+    description,
+    origin,
+    canonicalPath,
+    indexable,
+    alternates: indexable ? alternates : undefined,
+    ogType: "website",
+    structuredData,
+  });
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {

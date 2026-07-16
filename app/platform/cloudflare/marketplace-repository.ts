@@ -240,6 +240,15 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     const manifest = parseManifest(row.version.manifestJson);
     if (!manifest) return null;
 
+    const translationStatus = await this.loadTranslationStatus(row.theme.id);
+    const availableLocales = (
+      Object.entries(translationStatus) as Array<
+        [Locale, "draft" | "reviewed"]
+      >
+    )
+      .filter(([, status]) => status === "reviewed")
+      .map(([code]) => code);
+
     return {
       ...listItem,
       description: row.translation.description,
@@ -250,6 +259,10 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       payloadDigest: row.version.payloadDigest,
       archiveDigest: row.version.archiveDigest,
       packageStatus: row.theme.packageStatus,
+      visibility: row.theme.visibility,
+      moderationStatus: row.theme.moderationStatus,
+      translationStatus,
+      availableLocales,
       manifest: manifest.raw,
     };
   }
@@ -407,6 +420,24 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
     return rows.filter(
       (row) => isPubliclyListable(row.theme) && row.version !== null,
     );
+  }
+
+  private async loadTranslationStatus(
+    themeId: string,
+  ): Promise<Partial<Record<Locale, "draft" | "reviewed">>> {
+    const rows = await this.db
+      .select({
+        locale: themeTranslations.locale,
+        translationStatus: themeTranslations.translationStatus,
+      })
+      .from(themeTranslations)
+      .where(eq(themeTranslations.themeId, themeId));
+
+    const status: Partial<Record<Locale, "draft" | "reviewed">> = {};
+    for (const row of rows) {
+      status[row.locale] = row.translationStatus;
+    }
+    return status;
   }
 
   private async loadTaxonomyKeys(

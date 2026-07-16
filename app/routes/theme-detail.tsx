@@ -6,11 +6,26 @@ import {
   htmlLang,
   localePath,
   parseLocale,
+  type Locale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import { createServices } from "~/services/create-services.server";
 import type { ThemeDetail as ThemeDetailModel } from "~/services/marketplace/types";
+import { isIndexableTheme } from "~/services/seo/index-policy";
+import {
+  buildBasicMeta,
+  creatorPath,
+  themePath,
+  type HreflangAlternate,
+} from "~/services/seo/meta.server";
+import {
+  absoluteUrl,
+  buildBreadcrumbList,
+  buildCreativeWork,
+  buildPerson,
+  themeBreadcrumbs,
+} from "~/services/seo/structured-data";
 import type { Route } from "./+types/theme-detail";
 
 function readPreviewExtras(theme: ThemeDetailModel) {
@@ -34,10 +49,70 @@ export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: "Codex Skin Store" }];
   }
-  return [
-    { title: `${data.theme.name} · Codex Skin Store` },
-    { name: "description", content: data.theme.summary || data.theme.description },
+
+  const { theme, locale, origin, messages } = data;
+  const canonicalPath = themePath(locale, theme.slug);
+  // Prefer full description for crawlable meta; fall back to summary.
+  const description = theme.description || theme.summary;
+  const title = `${theme.name} · Codex Skin Store`;
+  const indexable = isIndexableTheme(
+    {
+      visibility: theme.visibility,
+      moderationStatus: theme.moderationStatus,
+      packageStatus: theme.packageStatus,
+      translationStatus: theme.translationStatus,
+    },
+    locale,
+  );
+
+  const alternates: HreflangAlternate[] = theme.availableLocales.map(
+    (code: Locale) => ({
+      locale: code,
+      path: themePath(code, theme.slug),
+    }),
+  );
+
+  const creatorUrl = absoluteUrl(
+    origin,
+    creatorPath(locale, theme.creator.handle),
+  );
+  const themeUrl = absoluteUrl(origin, canonicalPath);
+
+  const structuredData = [
+    buildCreativeWork({
+      name: theme.name,
+      description,
+      url: themeUrl,
+      image: theme.coverImage ?? theme.previewImage,
+      creatorName: theme.creator.displayName,
+      creatorUrl,
+      dateModified: theme.updatedAt,
+    }),
+    buildPerson({
+      name: theme.creator.displayName,
+      url: creatorUrl,
+    }),
+    buildBreadcrumbList(
+      origin,
+      themeBreadcrumbs({
+        locale,
+        homeLabel: messages.breadcrumbs.home,
+        themeName: theme.name,
+        themePath: canonicalPath,
+      }),
+    ),
   ];
+
+  return buildBasicMeta({
+    title,
+    description,
+    origin,
+    canonicalPath,
+    indexable,
+    alternates,
+    ogType: "article",
+    structuredData,
+  });
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {

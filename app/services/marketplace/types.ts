@@ -67,6 +67,13 @@ export type ThemeDetail = ThemeListItem & {
   payloadDigest: string | null;
   archiveDigest: string | null;
   packageStatus: "processing" | "ready" | "failed";
+  /** Public readiness flags for SEO index policy. */
+  visibility: "draft" | "public" | "unlisted" | "hidden";
+  moderationStatus: "clean" | "flagged" | "removed";
+  /** Per-locale translation readiness for hreflang / index decisions. */
+  translationStatus: Partial<Record<Locale, "draft" | "reviewed">>;
+  /** Locales with reviewed translations (subset of translationStatus). */
+  availableLocales: Locale[];
   manifest: Record<string, unknown>;
 };
 

@@ -30,3 +30,32 @@ export interface MarketplaceRepository {
     locale: Locale,
   ): Promise<TaxonomyHubRecord | null>;
 }
+
+export type SitemapUrlRecord = {
+  loc: string;
+  lastmod: number | null;
+};
+
+export type IndexableThemeSitemapEntry = {
+  slug: string;
+  updatedAt: number;
+  /** Locales with reviewed translations that may be indexed. */
+  locales: Locale[];
+};
+
+export type IndexableCreatorSitemapEntry = {
+  handle: string;
+  updatedAt: number;
+};
+
+export type IndexableTaxonomySitemapEntry = {
+  dimension: string;
+  key: string;
+  updatedAt: number;
+};
+
+export interface SeoRepository {
+  listIndexableThemes(): Promise<IndexableThemeSitemapEntry[]>;
+  listIndexableCreators(): Promise<IndexableCreatorSitemapEntry[]>;
+  listIndexableTaxonomies(): Promise<IndexableTaxonomySitemapEntry[]>;
+}

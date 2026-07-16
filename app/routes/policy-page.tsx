@@ -2,10 +2,16 @@ import { Breadcrumbs } from "~/components/breadcrumbs";
 import {
   htmlLang,
   localePath,
+  locales,
   parseLocale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages, type Messages } from "~/i18n/messages";
+import {
+  buildBasicMeta,
+  policyPath,
+  type HreflangAlternate,
+} from "~/services/seo/meta.server";
 import type { Route } from "./+types/policy-page";
 
 const POLICY_PAGES = ["terms", "privacy", "copyright", "about"] as const;
@@ -36,13 +42,26 @@ export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: "Codex Skin Store" }];
   }
-  return [
-    { title: `${data.title} · Codex Skin Store` },
-    { name: "description", content: data.body.slice(0, 160) },
-  ];
+
+  const { title, body, locale, origin, page } = data;
+  const canonicalPath = policyPath(locale, page);
+  const alternates: HreflangAlternate[] = locales.map((code) => ({
+    locale: code,
+    path: policyPath(code, page),
+  }));
+
+  return buildBasicMeta({
+    title: `${title} · Codex Skin Store`,
+    description: body.slice(0, 160),
+    origin,
+    canonicalPath,
+    indexable: true,
+    alternates,
+    ogType: "website",
+  });
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
   const locale = parseLocale(params.locale ?? "");
   if (!locale) {
     throw new Response("Not Found", { status: 404 });
@@ -64,6 +83,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   return {
     ...localeData,
+    origin: context.cloudflare.env.APP_ORIGIN,
     messages,
     page,
     title,

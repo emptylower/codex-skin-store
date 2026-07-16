@@ -3,26 +3,73 @@ import { ThemeCard } from "~/components/theme-card";
 import {
   htmlLang,
   localePath,
+  locales,
   parseLocale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import { createServices } from "~/services/create-services.server";
+import { isIndexableCreator } from "~/services/seo/index-policy";
+import {
+  buildBasicMeta,
+  creatorPath,
+  type HreflangAlternate,
+} from "~/services/seo/meta.server";
+import {
+  absoluteUrl,
+  buildBreadcrumbList,
+  buildPerson,
+  creatorBreadcrumbs,
+} from "~/services/seo/structured-data";
 import type { Route } from "./+types/creator-profile";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: "Codex Skin Store" }];
   }
-  return [
-    {
-      title: `${data.creator.displayName} · Codex Skin Store`,
-    },
-    {
-      name: "description",
-      content: data.creator.bio || data.creator.displayName,
-    },
+
+  const { creator, locale, origin, messages } = data;
+  const canonicalPath = creatorPath(locale, creator.handle);
+  const title = `${creator.displayName} · Codex Skin Store`;
+  const description = creator.bio || creator.displayName;
+  const indexable = isIndexableCreator({
+    publicThemeCount: creator.themes.length,
+  });
+
+  const alternates: HreflangAlternate[] = locales.map((code) => ({
+    locale: code,
+    path: creatorPath(code, creator.handle),
+  }));
+
+  const personUrl = absoluteUrl(origin, canonicalPath);
+  const structuredData = [
+    buildPerson({
+      name: creator.displayName,
+      url: personUrl,
+      description: creator.bio || undefined,
+      image: creator.avatarUrl,
+    }),
+    buildBreadcrumbList(
+      origin,
+      creatorBreadcrumbs({
+        locale,
+        homeLabel: messages.breadcrumbs.home,
+        creatorName: creator.displayName,
+        creatorPath: canonicalPath,
+      }),
+    ),
   ];
+
+  return buildBasicMeta({
+    title,
+    description,
+    origin,
+    canonicalPath,
+    indexable,
+    alternates: indexable ? alternates : undefined,
+    ogType: "profile",
+    structuredData,
+  });
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {
