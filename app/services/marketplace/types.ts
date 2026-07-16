@@ -43,6 +43,8 @@ export type ThemeListItem = {
   media: MarketplaceMedia;
   favoritesCount: number;
   downloadsCount: number;
+  /** Materialized trend score; 0 when not reconciled yet. */
+  trendScore: number;
   creator: {
     handle: string;
     displayName: string;

@@ -1,6 +1,7 @@
 import { createRequestHandler } from "react-router";
 
 import type { PackageQueueMessage } from "~/platform/ports";
+import { reconcileCounters } from "~/services/engagement/counters.server";
 import {
   consumePackageMessage,
   createJobDeps,
@@ -88,10 +89,16 @@ export default {
   },
 
   async scheduled(
-    _controller: ScheduledController,
+    controller: ScheduledController,
     env: Env,
     ctx: ExecutionContext,
   ) {
-    ctx.waitUntil(sweepExpiredJobs(createJobDeps(env), new Date()));
+    const scheduledTime = controller.scheduledTime ?? Date.now();
+    ctx.waitUntil(
+      (async () => {
+        await sweepExpiredJobs(createJobDeps(env), new Date(scheduledTime));
+        await reconcileCounters(env, scheduledTime);
+      })(),
+    );
   },
 } satisfies ExportedHandler<Env, PackageQueueMessage>;

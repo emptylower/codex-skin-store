@@ -511,6 +511,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       media: manifest.media,
       favoritesCount: row.theme.favoritesCount,
       downloadsCount: row.theme.downloadsCount,
+      trendScore: row.theme.trendScore ?? 0,
       creator: {
         handle: row.author.handle,
         displayName: row.author.displayName,
@@ -589,7 +590,13 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
         }
         return b.createdAt - a.createdAt;
       }
-      // trending: downloads then freshness (Plan 3 replaces with events)
+      // trending: real trend_score when available, else downloads + freshness
+      const aTrend = a.trendScore ?? 0;
+      const bTrend = b.trendScore ?? 0;
+      if (aTrend > 0 || bTrend > 0) {
+        if (bTrend !== aTrend) return bTrend - aTrend;
+        return b.createdAt - a.createdAt;
+      }
       if (b.downloadsCount !== a.downloadsCount) {
         return b.downloadsCount - a.downloadsCount;
       }
