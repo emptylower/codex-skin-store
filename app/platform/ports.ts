@@ -68,6 +68,16 @@ export type TaxonomySitemapCandidate = {
   publicThemeCountByLocale: Partial<Record<Locale, number>>;
 };
 
+/**
+ * Approved programmatic landing URLs (reviewed locale translations only).
+ */
+export type LandingSitemapCandidate = {
+  slug: string;
+  locale: Locale;
+  updatedAt: number;
+  rolloutBatch: number | null;
+};
+
 export interface SeoRepository {
   /** Public-ready theme rows with translation status (no index-policy filtering). */
   listThemeSitemapCandidates(): Promise<ThemeSitemapCandidate[]>;
@@ -75,6 +85,8 @@ export interface SeoRepository {
   listCreatorSitemapCandidates(): Promise<CreatorSitemapCandidate[]>;
   /** Controlled taxonomies with translation + inventory metadata. */
   listTaxonomySitemapCandidates(): Promise<TaxonomySitemapCandidate[]>;
+  /** Approved registry landings only (max active batch enforced in service). */
+  listLandingSitemapCandidates?(): Promise<LandingSitemapCandidate[]>;
 }
 
 /** R2 object head result for quarantine verification. */

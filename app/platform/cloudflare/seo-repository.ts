@@ -13,10 +13,12 @@ import { isPubliclyListable } from "~/domain/themes/state";
 import type { Locale } from "~/i18n/config";
 import type {
   CreatorSitemapCandidate,
+  LandingSitemapCandidate,
   SeoRepository,
   TaxonomySitemapCandidate,
   ThemeSitemapCandidate,
 } from "~/platform/ports";
+import { seoLandings, seoLandingTranslations } from "~/db/schema";
 
 export class CloudflareSeoRepository implements SeoRepository {
   private readonly db: Db;
@@ -246,6 +248,34 @@ export class CloudflareSeoRepository implements SeoRepository {
         publicThemeCountByLocale: inventory?.counts ?? {},
       };
     });
+  }
+
+  async listLandingSitemapCandidates(): Promise<LandingSitemapCandidate[]> {
+    const rows = await this.db
+      .select({
+        slug: seoLandings.slug,
+        locale: seoLandingTranslations.locale,
+        updatedAt: seoLandingTranslations.updatedAt,
+        rolloutBatch: seoLandings.rolloutBatch,
+      })
+      .from(seoLandings)
+      .innerJoin(
+        seoLandingTranslations,
+        eq(seoLandingTranslations.landingId, seoLandings.id),
+      )
+      .where(
+        and(
+          eq(seoLandings.indexStatus, "approved"),
+          eq(seoLandingTranslations.translationStatus, "reviewed"),
+        ),
+      );
+
+    return rows.map((row) => ({
+      slug: row.slug,
+      locale: row.locale,
+      updatedAt: row.updatedAt,
+      rolloutBatch: row.rolloutBatch,
+    }));
   }
 }
 
