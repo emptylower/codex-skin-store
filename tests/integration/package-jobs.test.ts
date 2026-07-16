@@ -5,6 +5,7 @@ import {
   consumePackageMessage,
   failJob,
   finishJob,
+  LEASE_MS,
   leaseJob,
   RETRY_DELAYS_SECONDS,
   sweepExpiredJobs,
@@ -267,6 +268,74 @@ describe("package job leasing", () => {
         .bind(NOW, JOB_ID)
         .run();
     }
+  });
+
+  it("lost ownership does not poison theme package_status", async () => {
+    const deps = createDeps();
+    const now = new Date(NOW);
+    await leaseJob(env.DB, JOB_ID, "worker-a", now);
+
+    // Simulate lease expiry / reassignment before worker-a fails permanently.
+    await env.DB.prepare(
+      `UPDATE package_jobs
+       SET lease_owner = 'worker-b',
+           lease_expires_at = ?,
+           updated_at = ?
+       WHERE id = ?`,
+    )
+      .bind(NOW + LEASE_MS, NOW, JOB_ID)
+      .run();
+
+    // Keep theme in a non-failed processing state to detect poisoning.
+    await env.DB.prepare(
+      `UPDATE themes SET package_status = 'processing' WHERE id = ?`,
+    )
+      .bind(THEME_ID)
+      .run();
+    await env.DB.prepare(
+      `UPDATE theme_versions
+       SET generation_state = 'processing',
+           generation_error_code = NULL,
+           generation_error_detail = NULL
+       WHERE theme_id = ? AND version = 1`,
+    )
+      .bind(THEME_ID)
+      .run();
+
+    const outcome = await failJob(deps, {
+      jobId: JOB_ID,
+      owner: "worker-a",
+      code: "ownership_lost_poison",
+      detail: "should not apply",
+      retryable: false,
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: "ignored" });
+
+    const job = await loadJob(env.DB, JOB_ID);
+    expect(job).toMatchObject({
+      state: "leased",
+      lease_owner: "worker-b",
+    });
+
+    const theme = await env.DB.prepare(
+      `SELECT package_status FROM themes WHERE id = ?`,
+    )
+      .bind(THEME_ID)
+      .first<{ package_status: string }>();
+    expect(theme?.package_status).toBe("processing");
+
+    const version = await env.DB.prepare(
+      `SELECT generation_state, generation_error_code FROM theme_versions
+       WHERE theme_id = ? AND version = 1`,
+    )
+      .bind(THEME_ID)
+      .first<{ generation_state: string; generation_error_code: string | null }>();
+    expect(version).toMatchObject({
+      generation_state: "processing",
+      generation_error_code: null,
+    });
   });
 
   it("failJob permanent failure marks job/version/theme failed and keeps draft", async () => {

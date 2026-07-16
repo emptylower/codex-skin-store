@@ -285,7 +285,13 @@ async function markJobFailed(
         ]
       : [args.code, args.detail, args.nowMs, args.nowMs, args.job.id];
 
-  await jobUpdate.bind(...binds).run();
+  const jobResult = await jobUpdate.bind(...binds).run();
+
+  // Ownership may have been lost (expired lease reclaimed by another worker).
+  // Do not poison theme/version package state when the job row was not updated.
+  if (jobResult.meta.changes !== 1) {
+    return;
+  }
 
   await db.batch([
     db
