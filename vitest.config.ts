@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["app/**/*.test.{ts,tsx}", "tests/unit/**/*.{ts,tsx}"],
+    setupFiles: ["./test/setup-dom.ts"],
     passWithNoTests: true,
   },
 });
