@@ -5,7 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
+  useMatches,
 } from "react-router";
 
 import { defaultLocale, htmlLang, parseLocale } from "~/i18n/config";
@@ -25,15 +25,25 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-function documentLang(pathname: string): string {
-  const segment = pathname.split("/").filter(Boolean)[0] ?? "";
-  const locale = parseLocale(segment) ?? defaultLocale;
-  return htmlLang(locale);
+type LocaleRouteData = {
+  htmlLang?: string;
+  locale?: string;
+};
+
+/** Prefer validated loader data (deepest match) over pathname parsing. */
+function useDocumentLang(): string {
+  const matches = useMatches();
+  for (const match of matches.slice().reverse()) {
+    const data = match.data as LocaleRouteData | undefined;
+    if (data?.htmlLang) return data.htmlLang;
+    const locale = data?.locale ? parseLocale(data.locale) : null;
+    if (locale) return htmlLang(locale);
+  }
+  return htmlLang(defaultLocale);
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { pathname } = useLocation();
-  const lang = documentLang(pathname);
+  const lang = useDocumentLang();
 
   return (
     <html lang={lang}>
