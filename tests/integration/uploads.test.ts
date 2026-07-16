@@ -287,4 +287,217 @@ describe("draft-bound direct uploads", () => {
       }),
     ).rejects.toMatchObject({ code: "slug_taken" });
   });
+
+  it("rejects re-issue after complete", async () => {
+    const sources = createMockSources();
+    const queue = { send: vi.fn(async () => undefined) };
+    const presign = {
+      signPut: vi.fn(async () => ({
+        url: "https://r2.test/presigned",
+        headers: { "content-type": "image/png" },
+      })),
+    };
+    const deps = {
+      db: env.DB,
+      sources,
+      queue,
+      presign,
+      now: () => NOW,
+      userId: "u1",
+    };
+
+    const draft = await createDraft(deps, {
+      ...validCreatorInput,
+      slug: "reissue-after-complete",
+    });
+    const issued = await issueUpload(deps, {
+      userId: "u1",
+      themeId: draft.themeId,
+      version: 1,
+      contentType: "image/png",
+      bytes: 1024,
+    });
+    sources.store.set(issued.key, {
+      size: 1024,
+      etag: '"etag-complete"',
+      customMetadata: {
+        "upload-id": issued.uploadId,
+        "expected-bytes": "1024",
+      },
+    });
+    await completeUpload(deps, { userId: "u1", uploadId: issued.uploadId });
+
+    await expect(
+      issueUpload(deps, {
+        userId: "u1",
+        themeId: draft.themeId,
+        version: 1,
+        contentType: "image/png",
+        bytes: 2048,
+      }),
+    ).rejects.toMatchObject({ code: "already_completed" });
+  });
+
+  it("rejects issue from suspended users", async () => {
+    const sources = createMockSources();
+    const queue = { send: vi.fn(async () => undefined) };
+    const presign = {
+      signPut: vi.fn(async () => ({
+        url: "https://r2.test/presigned",
+        headers: {},
+      })),
+    };
+
+    // Create draft while active, then suspend.
+    const activeDeps = {
+      db: env.DB,
+      sources,
+      queue,
+      presign,
+      now: () => NOW,
+      userId: "u1",
+    };
+    const draft = await createDraft(activeDeps, {
+      ...validCreatorInput,
+      slug: "suspended-issue-theme",
+    });
+    await insertUser("u1", "uploader-one", "suspended");
+
+    await expect(
+      issueUpload(activeDeps, {
+        userId: "u1",
+        themeId: draft.themeId,
+        version: 1,
+        contentType: "image/png",
+        bytes: 512,
+      }),
+    ).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  it("double complete still sends the queue once", async () => {
+    const sources = createMockSources();
+    const queue = { send: vi.fn(async () => undefined) };
+    const presign = {
+      signPut: vi.fn(async () => ({
+        url: "https://r2.test/presigned",
+        headers: {},
+      })),
+    };
+    const deps = {
+      db: env.DB,
+      sources,
+      queue,
+      presign,
+      now: () => NOW,
+      userId: "u1",
+    };
+
+    const draft = await createDraft(deps, {
+      ...validCreatorInput,
+      slug: "double-complete-theme",
+    });
+    const issued = await issueUpload(deps, {
+      userId: "u1",
+      themeId: draft.themeId,
+      version: 1,
+      contentType: "image/png",
+      bytes: 256,
+    });
+    sources.store.set(issued.key, {
+      size: 256,
+      etag: '"etag-d"',
+      customMetadata: {
+        "upload-id": issued.uploadId,
+        "expected-bytes": "256",
+      },
+    });
+
+    const first = await completeUpload(deps, {
+      userId: "u1",
+      uploadId: issued.uploadId,
+    });
+    const second = await completeUpload(deps, {
+      userId: "u1",
+      uploadId: issued.uploadId,
+    });
+
+    expect(first.queued).toBe(true);
+    expect(second.queued).toBe(false);
+    expect(first.jobId).toBeTruthy();
+    expect(second.jobId).toBe(first.jobId);
+    expect(queue.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers completed upload missing package job", async () => {
+    const sources = createMockSources();
+    const queue = { send: vi.fn(async () => undefined) };
+    const presign = {
+      signPut: vi.fn(async () => ({
+        url: "https://r2.test/presigned",
+        headers: {},
+      })),
+    };
+    const deps = {
+      db: env.DB,
+      sources,
+      queue,
+      presign,
+      now: () => NOW,
+      userId: "u1",
+    };
+
+    const draft = await createDraft(deps, {
+      ...validCreatorInput,
+      slug: "recover-missing-job",
+    });
+    const issued = await issueUpload(deps, {
+      userId: "u1",
+      themeId: draft.themeId,
+      version: 1,
+      contentType: "image/png",
+      bytes: 128,
+    });
+    sources.store.set(issued.key, {
+      size: 128,
+      etag: '"etag-r"',
+      customMetadata: {
+        "upload-id": issued.uploadId,
+        "expected-bytes": "128",
+      },
+    });
+
+    // Simulate completed upload + queued version without package_jobs row.
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE source_uploads
+         SET state = 'completed', r2_etag = ?, completed_at = ?
+         WHERE id = ?`,
+      ).bind('"etag-r"', NOW, issued.uploadId),
+      env.DB.prepare(
+        `UPDATE theme_versions
+         SET generation_state = 'queued',
+             source_key = ?,
+             source_bytes = ?,
+             updated_at = ?
+         WHERE theme_id = ? AND version = 1`,
+      ).bind(issued.key, 128, NOW, draft.themeId),
+    ]);
+
+    const recovered = await completeUpload(deps, {
+      userId: "u1",
+      uploadId: issued.uploadId,
+    });
+    expect(recovered.queued).toBe(true);
+    expect(recovered.jobId).toBeTruthy();
+    expect(queue.send).toHaveBeenCalledTimes(1);
+
+    // Second recovery is idempotent.
+    const again = await completeUpload(deps, {
+      userId: "u1",
+      uploadId: issued.uploadId,
+    });
+    expect(again.queued).toBe(false);
+    expect(again.jobId).toBe(recovered.jobId);
+    expect(queue.send).toHaveBeenCalledTimes(1);
+  });
 });

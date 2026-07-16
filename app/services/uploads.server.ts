@@ -84,6 +84,8 @@ export async function issueUpload(
     throw new UploadError("bytes_out_of_range");
   }
 
+  await assertUserCanUpload(deps, input.userId);
+
   const now = deps.now?.() ?? Date.now();
 
   const row = await deps.db
@@ -117,20 +119,33 @@ export async function issueUpload(
   if (row.visibility !== "draft") {
     throw new UploadError("invalid_state", "theme_not_draft");
   }
-  if (row.generation_state !== "awaiting_upload") {
-    throw new UploadError("invalid_state", "version_not_awaiting_upload");
-  }
 
   const existing = await deps.db
     .prepare(
-      `SELECT id, state, quarantine_key FROM source_uploads
+      `SELECT id, state, quarantine_key, declared_content_type, expected_bytes, expires_at
+       FROM source_uploads
        WHERE theme_id = ? AND version = ?`,
     )
     .bind(input.themeId, input.version)
-    .first<{ id: string; state: string; quarantine_key: string }>();
+    .first<{
+      id: string;
+      state: string;
+      quarantine_key: string;
+      declared_content_type: string;
+      expected_bytes: number;
+      expires_at: number;
+    }>();
 
+  // Prefer completed/finalized upload errors over generation-state mismatch so
+  // re-issue after complete surfaces a clear conflict.
   if (existing && existing.state !== "issued") {
-    throw new UploadError("invalid_state", "upload_already_finalized");
+    throw new UploadError(
+      existing.state === "completed" ? "already_completed" : "invalid_state",
+      "upload_already_finalized",
+    );
+  }
+  if (row.generation_state !== "awaiting_upload") {
+    throw new UploadError("invalid_state", "version_not_awaiting_upload");
   }
 
   const uploadId = existing?.id ?? crypto.randomUUID();
@@ -146,7 +161,8 @@ export async function issueUpload(
         // Best-effort cleanup; completion path also deletes mismatches.
       }
     }
-    await deps.db
+
+    const updateResult = await deps.db
       .prepare(
         `UPDATE source_uploads
          SET quarantine_key = ?,
@@ -157,7 +173,7 @@ export async function issueUpload(
              expires_at = ?,
              completed_at = NULL,
              created_at = ?
-         WHERE id = ?`,
+         WHERE id = ? AND state = 'issued'`,
       )
       .bind(
         key,
@@ -168,55 +184,121 @@ export async function issueUpload(
         uploadId,
       )
       .run();
+
+    if (updateResult.meta.changes !== 1) {
+      // Lost the race: another request completed (or rejected) this upload.
+      const current = await deps.db
+        .prepare(
+          `SELECT id, state, quarantine_key, declared_content_type, expected_bytes, expires_at
+           FROM source_uploads WHERE id = ?`,
+        )
+        .bind(uploadId)
+        .first<{
+          id: string;
+          state: string;
+          quarantine_key: string;
+          declared_content_type: string;
+          expected_bytes: number;
+          expires_at: number;
+        }>();
+
+      if (!current) {
+        throw new UploadError("not_found");
+      }
+      if (current.state === "issued") {
+        // Another re-issue won; return that issued upload's presign.
+        return signIssued(deps, {
+          uploadId: current.id,
+          key: current.quarantine_key,
+          contentType: current.declared_content_type,
+          bytes: current.expected_bytes,
+          expiresAt: current.expires_at,
+        });
+      }
+      if (current.state === "completed") {
+        throw new UploadError("already_completed", "upload_already_finalized");
+      }
+      throw new UploadError("invalid_state", "upload_already_finalized");
+    }
   } else {
-    await deps.db
-      .prepare(
-        `INSERT INTO source_uploads (
-           id, theme_id, version, user_id, quarantine_key,
-           declared_content_type, expected_bytes, state,
-           r2_etag, expires_at, completed_at, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'issued', NULL, ?, NULL, ?)`,
-      )
-      .bind(
-        uploadId,
-        input.themeId,
-        input.version,
-        input.userId,
-        key,
-        input.contentType,
-        input.bytes,
-        expiresAt,
-        now,
-      )
-      .run();
+    try {
+      await deps.db
+        .prepare(
+          `INSERT INTO source_uploads (
+             id, theme_id, version, user_id, quarantine_key,
+             declared_content_type, expected_bytes, state,
+             r2_etag, expires_at, completed_at, created_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, 'issued', NULL, ?, NULL, ?)`,
+        )
+        .bind(
+          uploadId,
+          input.themeId,
+          input.version,
+          input.userId,
+          key,
+          input.contentType,
+          input.bytes,
+          expiresAt,
+          now,
+        )
+        .run();
+    } catch {
+      // Unique constraint race: another issuer inserted first.
+      const current = await deps.db
+        .prepare(
+          `SELECT id, state, quarantine_key, declared_content_type, expected_bytes, expires_at
+           FROM source_uploads
+           WHERE theme_id = ? AND version = ?`,
+        )
+        .bind(input.themeId, input.version)
+        .first<{
+          id: string;
+          state: string;
+          quarantine_key: string;
+          declared_content_type: string;
+          expected_bytes: number;
+          expires_at: number;
+        }>();
+
+      if (!current) {
+        throw new UploadError("invalid_state", "upload_insert_conflict");
+      }
+      if (current.state === "issued") {
+        return signIssued(deps, {
+          uploadId: current.id,
+          key: current.quarantine_key,
+          contentType: current.declared_content_type,
+          bytes: current.expected_bytes,
+          expiresAt: current.expires_at,
+        });
+      }
+      if (current.state === "completed") {
+        throw new UploadError("already_completed", "upload_already_finalized");
+      }
+      throw new UploadError("invalid_state", "upload_already_finalized");
+    }
   }
 
-  const signed = await deps.presign.signPut({
+  return signIssued(deps, {
+    uploadId,
     key,
     contentType: input.contentType,
-    uploadId,
-    expectedBytes: input.bytes,
-    expiresSeconds: Math.floor(PRESIGN_TTL_MS / 1000),
-  });
-
-  return {
-    uploadId,
-    key,
-    url: signed.url,
-    headers: signed.headers,
+    bytes: input.bytes,
     expiresAt,
-  };
+  });
 }
 
 /**
  * Verify the quarantine object and enqueue package generation once.
  * Repeated complete calls are idempotent: queue send only when the
- * package_jobs insert changes one row.
+ * package_jobs insert changes one row (or recovery inserts a missing job).
  */
 export async function completeUpload(
   deps: UploadDeps,
   input: CompleteUploadInput,
 ): Promise<{ jobId: string | null; queued: boolean }> {
+  await assertUserCanUpload(deps, input.userId);
+
   const now = deps.now?.() ?? Date.now();
 
   const row = await deps.db
@@ -261,15 +343,13 @@ export async function completeUpload(
     throw new UploadError("forbidden");
   }
 
-  // Idempotent success path for already-completed uploads.
+  // Idempotent success / recovery for already-completed uploads.
   if (row.upload_state === "completed") {
-    const existingJob = await deps.db
-      .prepare(
-        `SELECT id FROM package_jobs WHERE idempotency_key = ?`,
-      )
-      .bind(`package:${row.theme_id}:${row.version}`)
-      .first<{ id: string }>();
-    return { jobId: existingJob?.id ?? null, queued: false };
+    return ensurePackageJob(deps, {
+      themeId: row.theme_id,
+      version: row.version,
+      now,
+    });
   }
 
   if (row.upload_state !== "issued") {
@@ -316,11 +396,8 @@ export async function completeUpload(
     );
   }
 
-  const idempotencyKey = `package:${row.theme_id}:${row.version}`;
-  const jobId = crypto.randomUUID();
-
-  // Mark upload completed and advance generation state.
-  await deps.db.batch([
+  // Mark upload completed and advance generation state; only the winner proceeds.
+  const batchResults = await deps.db.batch([
     deps.db
       .prepare(
         `UPDATE source_uploads
@@ -350,8 +427,111 @@ export async function completeUpload(
       ),
   ]);
 
-  // Idempotent job insert: only the first successful insert enqueues.
-  await deps.db
+  const uploadTransitioned = batchResults[0]?.meta.changes === 1;
+
+  if (!uploadTransitioned) {
+    // Lost the race: re-read and either recover idempotently or fail.
+    const current = await deps.db
+      .prepare(
+        `SELECT
+           u.state AS upload_state,
+           v.generation_state AS generation_state
+         FROM source_uploads u
+         INNER JOIN theme_versions v
+           ON v.theme_id = u.theme_id AND v.version = u.version
+         WHERE u.id = ?`,
+      )
+      .bind(row.upload_id)
+      .first<{ upload_state: string; generation_state: string }>();
+
+    if (!current) {
+      throw new UploadError("not_found");
+    }
+    if (current.upload_state === "completed") {
+      return ensurePackageJob(deps, {
+        themeId: row.theme_id,
+        version: row.version,
+        now,
+      });
+    }
+    if (current.upload_state === "rejected") {
+      throw new UploadError("invalid_state", "upload_rejected");
+    }
+    throw new UploadError("invalid_state", "upload_transition_failed");
+  }
+
+  // Only insert package_jobs / send queue after successful transition.
+  return ensurePackageJob(deps, {
+    themeId: row.theme_id,
+    version: row.version,
+    now,
+  });
+}
+
+async function assertUserCanUpload(
+  deps: UploadDeps,
+  userId: string,
+): Promise<void> {
+  const user = await deps.db
+    .prepare(
+      `SELECT id, upload_status, deletion_status
+       FROM users
+       WHERE id = ?`,
+    )
+    .bind(userId)
+    .first<{
+      id: string;
+      upload_status: string;
+      deletion_status: string;
+    }>();
+
+  if (!user || user.deletion_status !== "active") {
+    throw new UploadError("forbidden", "user_not_active");
+  }
+  if (user.upload_status !== "active") {
+    throw new UploadError("forbidden", "upload_suspended");
+  }
+}
+
+async function signIssued(
+  deps: UploadDeps,
+  args: {
+    uploadId: string;
+    key: string;
+    contentType: string;
+    bytes: number;
+    expiresAt: number;
+  },
+): Promise<IssuedUpload> {
+  const signed = await deps.presign.signPut({
+    key: args.key,
+    contentType: args.contentType,
+    uploadId: args.uploadId,
+    expectedBytes: args.bytes,
+    expiresSeconds: Math.floor(PRESIGN_TTL_MS / 1000),
+  });
+
+  return {
+    uploadId: args.uploadId,
+    key: args.key,
+    url: signed.url,
+    headers: signed.headers,
+    expiresAt: args.expiresAt,
+  };
+}
+
+/**
+ * Insert package job if missing and send queue only for the winning insert.
+ * Used for the normal complete path and for completed-without-job recovery.
+ */
+async function ensurePackageJob(
+  deps: UploadDeps,
+  args: { themeId: string; version: number; now: number },
+): Promise<{ jobId: string | null; queued: boolean }> {
+  const idempotencyKey = `package:${args.themeId}:${args.version}`;
+  const jobId = crypto.randomUUID();
+
+  const insertResult = await deps.db
     .prepare(
       `INSERT INTO package_jobs (
          id, idempotency_key, theme_id, version, state,
@@ -365,21 +545,15 @@ export async function completeUpload(
     .bind(
       jobId,
       idempotencyKey,
-      row.theme_id,
-      row.version,
-      now,
-      now,
-      now,
+      args.themeId,
+      args.version,
+      args.now,
+      args.now,
+      args.now,
     )
     .run();
 
-  // Only the winning insert (our jobId) enqueues the queue message.
-  const inserted = await deps.db
-    .prepare(`SELECT id FROM package_jobs WHERE id = ?`)
-    .bind(jobId)
-    .first<{ id: string }>();
-
-  if (inserted) {
+  if (insertResult.meta.changes === 1) {
     await deps.queue.send({ jobId, idempotencyKey });
     return { jobId, queued: true };
   }
