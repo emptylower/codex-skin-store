@@ -71,12 +71,16 @@ body {
   padding-bottom: 1rem;
 }
 
-.marketplace__nav {
+.marketplace__brand {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.marketplace__brand-text {
+  font-weight: 600;
 }
 
 .marketplace__lede {

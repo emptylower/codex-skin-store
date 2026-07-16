@@ -1,5 +1,5 @@
-import type { MarketplaceFilters } from "~/services/marketplace/types";
 import type { Messages } from "~/i18n/messages";
+import type { MarketplaceFilters } from "~/services/marketplace/types";
 
 export type FilterBarProps = {
   filters: MarketplaceFilters | null;
@@ -11,6 +11,43 @@ const PLATFORM_OPTIONS = ["", "macos", "windows", "both"] as const;
 const MODE_OPTIONS = ["", "light", "dark"] as const;
 const MEDIA_OPTIONS = ["", "static", "animated"] as const;
 const SORT_OPTIONS = ["trending", "newest", "downloads"] as const;
+
+function platformLabel(
+  value: (typeof PLATFORM_OPTIONS)[number],
+  labels: Messages["filters"],
+): string {
+  if (!value) return labels.any;
+  if (value === "macos") return labels.platformMacos;
+  if (value === "windows") return labels.platformWindows;
+  return labels.platformBoth;
+}
+
+function modeLabel(
+  value: (typeof MODE_OPTIONS)[number],
+  labels: Messages["filters"],
+): string {
+  if (!value) return labels.any;
+  if (value === "light") return labels.modeLight;
+  return labels.modeDark;
+}
+
+function mediaLabel(
+  value: (typeof MEDIA_OPTIONS)[number],
+  labels: Messages["filters"],
+): string {
+  if (!value) return labels.any;
+  if (value === "static") return labels.mediaStatic;
+  return labels.mediaAnimated;
+}
+
+function sortLabel(
+  value: (typeof SORT_OPTIONS)[number],
+  labels: Messages["filters"],
+): string {
+  if (value === "trending") return labels.sortTrending;
+  if (value === "newest") return labels.sortNewest;
+  return labels.sortDownloads;
+}
 
 export function FilterBar({ filters, labels, action }: FilterBarProps) {
   const current = filters ?? {
@@ -24,6 +61,10 @@ export function FilterBar({ filters, labels, action }: FilterBarProps) {
 
   return (
     <form className="filter-bar" method="get" action={action} role="search">
+      {current.taxonomy.map((key) => (
+        <input key={key} type="hidden" name="taxonomy" value={key} />
+      ))}
+
       <div className="filter-bar__field">
         <label htmlFor="filter-q">{labels.search}</label>
         <input
@@ -45,7 +86,7 @@ export function FilterBar({ filters, labels, action }: FilterBarProps) {
         >
           {PLATFORM_OPTIONS.map((value) => (
             <option key={value || "any"} value={value}>
-              {value ? value : labels.any}
+              {platformLabel(value, labels)}
             </option>
           ))}
         </select>
@@ -56,7 +97,7 @@ export function FilterBar({ filters, labels, action }: FilterBarProps) {
         <select id="filter-mode" name="mode" defaultValue={current.mode ?? ""}>
           {MODE_OPTIONS.map((value) => (
             <option key={value || "any"} value={value}>
-              {value ? value : labels.any}
+              {modeLabel(value, labels)}
             </option>
           ))}
         </select>
@@ -71,7 +112,7 @@ export function FilterBar({ filters, labels, action }: FilterBarProps) {
         >
           {MEDIA_OPTIONS.map((value) => (
             <option key={value || "any"} value={value}>
-              {value ? value : labels.any}
+              {mediaLabel(value, labels)}
             </option>
           ))}
         </select>
@@ -86,7 +127,7 @@ export function FilterBar({ filters, labels, action }: FilterBarProps) {
         >
           {SORT_OPTIONS.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {sortLabel(value, labels)}
             </option>
           ))}
         </select>

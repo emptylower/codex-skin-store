@@ -30,8 +30,64 @@ type ManifestFacts = {
   media: MarketplaceMedia;
   previewImage: string | null;
   coverImage: string | null;
+  preview?: ThemeListItem["preview"];
   raw: Record<string, unknown>;
 };
+
+function readOptionalNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readPreviewFromManifest(
+  parsed: Record<string, unknown>,
+): ThemeListItem["preview"] | undefined {
+  const paletteRaw = parsed.palette;
+  let palette:
+    | {
+        bg?: string;
+        fg?: string;
+        accent?: string;
+        muted?: string;
+      }
+    | undefined;
+  if (paletteRaw && typeof paletteRaw === "object" && !Array.isArray(paletteRaw)) {
+    const p = paletteRaw as Record<string, unknown>;
+    palette = {
+      bg: typeof p.bg === "string" ? p.bg : undefined,
+      fg: typeof p.fg === "string" ? p.fg : undefined,
+      accent: typeof p.accent === "string" ? p.accent : undefined,
+      muted: typeof p.muted === "string" ? p.muted : undefined,
+    };
+  }
+
+  let focalX: number | undefined;
+  let focalY: number | undefined;
+  const focalRaw = parsed.focalPoint;
+  if (focalRaw && typeof focalRaw === "object" && !Array.isArray(focalRaw)) {
+    const f = focalRaw as Record<string, unknown>;
+    focalX = readOptionalNumber(f.x);
+    focalY = readOptionalNumber(f.y);
+  }
+  if (focalX === undefined) {
+    focalX = readOptionalNumber(parsed.focalX);
+  }
+  if (focalY === undefined) {
+    focalY = readOptionalNumber(parsed.focalY);
+  }
+
+  const overlay = readOptionalNumber(parsed.overlay);
+
+  if (!palette && focalX === undefined && focalY === undefined && overlay === undefined) {
+    return undefined;
+  }
+
+  return {
+    palette,
+    focalX,
+    focalY,
+    overlay,
+  };
+}
 
 /**
  * Parse marketplace facts from theme_versions.manifest_json.
@@ -75,8 +131,9 @@ function parseManifest(manifestJson: string): ManifestFacts | null {
     typeof parsed.previewImage === "string" ? parsed.previewImage : null;
   const coverImage =
     typeof parsed.coverImage === "string" ? parsed.coverImage : null;
+  const preview = readPreviewFromManifest(parsed);
 
-  return { platform, mode, media, previewImage, coverImage, raw: parsed };
+  return { platform, mode, media, previewImage, coverImage, preview, raw: parsed };
 }
 
 function matchesPlatform(
@@ -366,6 +423,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       },
       previewImage: manifest.previewImage,
       coverImage: manifest.coverImage,
+      preview: manifest.preview,
       taxonomyKeys,
       createdAt: row.theme.createdAt,
       updatedAt: row.theme.updatedAt,

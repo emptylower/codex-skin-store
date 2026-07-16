@@ -7,6 +7,8 @@ import {
   type KeyboardEvent,
 } from "react";
 
+import { safeMediaUrl } from "~/utils/safe-media-url";
+
 import { CodexHome } from "./codex-home";
 import { CodexTask } from "./codex-task";
 
@@ -31,6 +33,8 @@ export type ThemePreviewModel = {
 export type ThemePreviewLabels = {
   home: string;
   task: string;
+  /** Accessible name for the Home/Task tablist. */
+  tablist?: string;
 };
 
 export type ThemePreviewProps = {
@@ -45,19 +49,6 @@ const TABS: PreviewTab[] = ["home", "task"];
 function clamp01(value: number | undefined, fallback: number): number {
   if (typeof value !== "number" || Number.isNaN(value)) return fallback;
   return Math.min(1, Math.max(0, value));
-}
-
-function safeMediaUrl(value: string | null | undefined): string | null {
-  if (!value) return null;
-  // Allow site-relative paths and https URLs only.
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-  try {
-    const url = new URL(value);
-    if (url.protocol === "https:") return url.toString();
-  } catch {
-    return null;
-  }
-  return null;
 }
 
 function buildShellStyle(theme: ThemePreviewModel): CSSProperties {
@@ -132,7 +123,11 @@ export function ThemePreview({ theme, labels }: ThemePreviewProps) {
     >
       <div className="theme-preview__chrome">
         <p className="theme-preview__title">{theme.name}</p>
-        <div className="theme-preview__tabs" role="tablist" aria-label="Codex views">
+        <div
+          className="theme-preview__tabs"
+          role="tablist"
+          aria-label={labels.tablist ?? "Codex views"}
+        >
           <button
             type="button"
             role="tab"

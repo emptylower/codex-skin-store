@@ -55,6 +55,34 @@ function parseFiltersFromSearchParams(
   return parsed.data;
 }
 
+/**
+ * Loose form defaults when strict filter validation fails.
+ * Keeps attempted values in the filter bar so Apply doesn't wipe user input.
+ */
+function formDefaultsFromSearchParams(
+  searchParams: URLSearchParams,
+): MarketplaceFilters {
+  const platform = emptyToUndefined(searchParams.get("platform"));
+  const mode = emptyToUndefined(searchParams.get("mode"));
+  const media = emptyToUndefined(searchParams.get("media"));
+  const sort = emptyToUndefined(searchParams.get("sort"));
+
+  return {
+    q: emptyToUndefined(searchParams.get("q")),
+    platform:
+      platform === "macos" || platform === "windows" || platform === "both"
+        ? platform
+        : undefined,
+    mode: mode === "light" || mode === "dark" ? mode : undefined,
+    media: media === "static" || media === "animated" ? media : undefined,
+    sort:
+      sort === "trending" || sort === "newest" || sort === "downloads"
+        ? sort
+        : "trending",
+    taxonomy: parseTaxonomy(searchParams).slice(0, 4).map((t) => t.slice(0, 40)),
+  };
+}
+
 function readPreviewExtras(theme: ThemeListItem): {
   palette?: {
     bg?: string;
@@ -65,18 +93,19 @@ function readPreviewExtras(theme: ThemeListItem): {
   focalPoint?: { x: number; y: number };
   overlay?: number;
 } {
-  // List items do not carry full manifest; provide sensible defaults for SSR demo.
-  // Theme detail will supply full palette/focal later.
-  void theme;
+  const preview = theme.preview;
   return {
-    palette: {
+    palette: preview?.palette ?? {
       bg: "#0f172a",
       fg: "#f8fafc",
       accent: "#38bdf8",
       muted: "#94a3b8",
     },
-    focalPoint: { x: 0.5, y: 0.4 },
-    overlay: 0.35,
+    focalPoint: {
+      x: preview?.focalX ?? 0.5,
+      y: preview?.focalY ?? 0.4,
+    },
+    overlay: preview?.overlay ?? 0.35,
   };
 }
 
@@ -137,7 +166,8 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
       messages,
       themes: [] as ThemeListItem[],
       filterError: true as const,
-      filters: null,
+      // Strict validation failed; still surface safe form defaults for the bar.
+      filters: formDefaultsFromSearchParams(url.searchParams),
     };
   }
 
@@ -162,10 +192,9 @@ export default function Marketplace({ loaderData }: Route.ComponentProps) {
   return (
     <main className="marketplace">
       <header className="marketplace__header">
-        <nav className="marketplace__nav" aria-label="Primary">
-          <span>{messages.nav.explore}</span>
-          <span>{messages.nav.upload}</span>
-        </nav>
+        <div className="marketplace__brand">
+          <span className="marketplace__brand-text">{messages.nav.explore}</span>
+        </div>
         <h1>{messages.marketplace.heading}</h1>
         <p className="marketplace__lede">{messages.marketplace.lede}</p>
       </header>
@@ -220,6 +249,7 @@ export default function Marketplace({ loaderData }: Route.ComponentProps) {
                   theme={theme}
                   labels={messages.theme}
                   filterLabels={messages.filters}
+                  locale={locale}
                 />
               </li>
             ))}

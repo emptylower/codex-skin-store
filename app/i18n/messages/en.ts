@@ -16,6 +16,16 @@ export const messages = {
     search: "Search",
     any: "Any",
     apply: "Apply filters",
+    platformMacos: "macOS",
+    platformWindows: "Windows",
+    platformBoth: "Both",
+    modeLight: "Light",
+    modeDark: "Dark",
+    mediaStatic: "Static",
+    mediaAnimated: "Animated",
+    sortTrending: "Trending",
+    sortNewest: "Newest",
+    sortDownloads: "Downloads",
   },
   marketplace: {
     heading: "Codex theme marketplace",
@@ -29,6 +39,7 @@ export const messages = {
   preview: {
     home: "Home",
     task: "Task",
+    tablist: "Codex views",
   },
   theme: {
     related: "Related themes",

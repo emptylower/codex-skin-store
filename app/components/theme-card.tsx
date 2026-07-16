@@ -1,18 +1,33 @@
-import type { ThemeListItem } from "~/services/marketplace/types";
+import type { Locale } from "~/i18n/config";
 import type { Messages } from "~/i18n/messages";
+import type { ThemeListItem } from "~/services/marketplace/types";
+import { safeMediaUrl } from "~/utils/safe-media-url";
 
 export type ThemeCardProps = {
   theme: ThemeListItem;
   labels: Messages["theme"];
   filterLabels: Messages["filters"];
+  locale?: Locale;
 };
 
-function formatCount(value: number): string {
-  return new Intl.NumberFormat("en", { notation: "compact" }).format(value);
+function numberLocale(locale: Locale | undefined): string {
+  if (locale === "zh-hans") return "zh-CN";
+  return "en";
 }
 
-export function ThemeCard({ theme, labels, filterLabels }: ThemeCardProps) {
-  const mediaSrc = theme.previewImage ?? theme.coverImage;
+function formatCount(value: number, locale?: Locale): string {
+  return new Intl.NumberFormat(numberLocale(locale), {
+    notation: "compact",
+  }).format(value);
+}
+
+export function ThemeCard({
+  theme,
+  labels,
+  filterLabels,
+  locale,
+}: ThemeCardProps) {
+  const mediaSrc = safeMediaUrl(theme.previewImage ?? theme.coverImage);
 
   return (
     <article className="theme-card" data-testid="theme-card">
@@ -30,7 +45,7 @@ export function ThemeCard({ theme, labels, filterLabels }: ThemeCardProps) {
         )}
       </div>
       <div className="theme-card__body">
-        <h2 className="theme-card__title">{theme.name}</h2>
+        <h3 className="theme-card__title">{theme.name}</h3>
         <p className="theme-card__creator">
           <span className="theme-card__creator-label">{labels.by}</span>{" "}
           <span>{theme.creator.displayName}</span>
@@ -51,10 +66,10 @@ export function ThemeCard({ theme, labels, filterLabels }: ThemeCardProps) {
         </ul>
         <p className="theme-card__counts">
           <span>
-            {labels.favorites}: {formatCount(theme.favoritesCount)}
+            {labels.favorites}: {formatCount(theme.favoritesCount, locale)}
           </span>
           <span>
-            {labels.downloads}: {formatCount(theme.downloadsCount)}
+            {labels.downloads}: {formatCount(theme.downloadsCount, locale)}
           </span>
         </p>
       </div>

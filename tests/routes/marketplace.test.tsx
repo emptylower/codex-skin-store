@@ -251,11 +251,14 @@ describe("marketplace route", () => {
 
   it("returns inline validation state and noindex for invalid filters", async () => {
     const data = await loader(
-      loaderArgs("http://localhost/en?platform=amiga&mode=sepia"),
+      loaderArgs("http://localhost/en?platform=amiga&mode=sepia&q=neon"),
     );
     expect(data.filterError).toBe(true);
     expect(data.themes).toEqual([]);
-    expect(data.filters).toBeNull();
+    // Invalid enum values are dropped for form defaults; valid q is preserved.
+    expect(data.filters?.platform).toBeUndefined();
+    expect(data.filters?.mode).toBeUndefined();
+    expect(data.filters?.q).toBe("neon");
 
     const tags = meta({
       data,
@@ -287,6 +290,7 @@ describe("marketplace route", () => {
       />,
     );
     expect(html).toContain(data.messages.marketplace.filterError);
+    expect(html).toContain('value="neon"');
   });
 
   it("404s for unknown locales", async () => {

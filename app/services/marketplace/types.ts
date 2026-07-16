@@ -17,6 +17,18 @@ export type MarketplacePlatform = "macos" | "windows" | "both";
 export type MarketplaceMode = "light" | "dark";
 export type MarketplaceMedia = "static" | "animated";
 
+export type ThemeListPreview = {
+  palette?: {
+    bg?: string;
+    fg?: string;
+    accent?: string;
+    muted?: string;
+  };
+  focalX?: number;
+  focalY?: number;
+  overlay?: number;
+};
+
 export type ThemeListItem = {
   id: string;
   slug: string;
@@ -33,6 +45,8 @@ export type ThemeListItem = {
   };
   previewImage: string | null;
   coverImage: string | null;
+  /** Optional preview facts from manifest when available. */
+  preview?: ThemeListPreview;
   taxonomyKeys: string[];
   createdAt: number;
   updatedAt: number;
