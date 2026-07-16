@@ -274,7 +274,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       locale,
       sourceLocale: row.theme.sourceLocale,
       currentVersion: row.theme.currentVersion,
-      packageKey: row.version.packageKey,
+      // packageKey is R2-private; never serialize onto public ThemeDetail / loader HTML.
       payloadDigest: row.version.payloadDigest,
       archiveDigest: row.version.archiveDigest,
       packageStatus: row.theme.packageStatus,

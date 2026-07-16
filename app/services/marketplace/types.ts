@@ -65,7 +65,7 @@ export type ThemeDetail = ThemeListItem & {
   locale: Locale;
   sourceLocale: Locale;
   currentVersion: number | null;
-  packageKey: string | null;
+  /** Integrity digests are public; R2 packageKey stays server-only. */
   payloadDigest: string | null;
   archiveDigest: string | null;
   packageStatus: "processing" | "ready" | "failed";

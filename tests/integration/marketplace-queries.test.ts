@@ -644,9 +644,12 @@ describe("marketplace public queries", () => {
     expect(theme?.taxonomyKeys).toEqual(
       expect.arrayContaining(["minimal", "dark", "focus"]),
     );
+    // R2 packageKey must stay server-only (not on public ThemeDetail).
+    expect(theme).not.toHaveProperty("packageKey");
 
     const zh = await services.marketplace.getTheme("mq-dark-win", "zh-hans");
     expect(zh?.name).toBe("深色 Win");
+    expect(zh).not.toHaveProperty("packageKey");
   });
 
   it("returns creator profile with only public listable themes", async () => {

@@ -360,8 +360,8 @@ describe("public theme detail", () => {
     expect(html).toContain("CC-BY-4.0");
     expect(html).toContain("1");
     expect(html).not.toContain("packages/test.zip");
-    expect(html).not.toContain(data.theme.packageKey ?? "packages/");
     expect(html).not.toContain(data.messages.theme.packageKey);
+    expect(data.theme).not.toHaveProperty("packageKey");
     expect(html).toContain("sha256:payload-test");
     expect(html).toContain("sha256:archive-test");
     expect(html).toContain("Nova Chen");
@@ -388,7 +388,10 @@ describe("public theme detail", () => {
       ),
     );
 
-    expect(data.theme.packageKey).toBe("packages/test.zip");
+    // R2 packageKey must never appear on public loader data (RR single-fetch).
+    expect(data.theme).not.toHaveProperty("packageKey");
+    expect(JSON.stringify(data.theme)).not.toContain("packages/test.zip");
+    expect(JSON.stringify(data.theme)).not.toContain("packageKey");
 
     const html = renderToStaticMarkup(
       <ThemeDetail
