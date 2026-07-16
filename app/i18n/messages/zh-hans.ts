@@ -65,7 +65,7 @@ export const messages = {
     focal: "焦点",
     author: "作者",
     installPrerequisites:
-      "需要 Codex Desktop。认证下载能力就绪后，可从安装包完成安装。",
+      "需要 macOS 或 Windows 上的 Codex Desktop。请使用官方 Codex 安装流程在你的平台上应用主题。",
   },
   creator: {
     themes: "公开主题",
@@ -81,7 +81,7 @@ export const messages = {
   policy: {
     terms: "服务条款",
     termsBody:
-      "Codex Skin Store 是面向 Codex Desktop 的免费社区主题市场。使用本站即表示你承诺仅发布有权发布的内容，尊重其他创作者，并接受出于安全、版权或政策原因的审核与下架。本里程碑不售卖主题安装包。",
+      "Codex Skin Store 是面向 Codex Desktop 的免费社区主题市场。使用本站即表示你承诺仅发布有权发布的内容，尊重其他创作者，并接受出于安全、版权或政策原因的审核与下架。本站不售卖主题安装包。",
     privacy: "隐私政策",
     privacyBody:
       "我们仅处理运营双语公开市场所需的最少数据：主题目录内容、公开创作者资料，以及安全与可靠性所需的技术日志。请勿在主题资源或描述中上传个人敏感信息。如需处理数据相关请求，请联系运营方。",

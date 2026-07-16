@@ -137,12 +137,6 @@ export default function ThemeDetailPage({ loaderData }: Route.ComponentProps) {
             <dt>{messages.theme.packageStatus}</dt>
             <dd>{messages.theme.packageReady}</dd>
           </div>
-          {theme.packageKey ? (
-            <div>
-              <dt>{messages.theme.packageKey}</dt>
-              <dd>{theme.packageKey}</dd>
-            </div>
-          ) : null}
           {theme.payloadDigest ? (
             <div>
               <dt>{messages.theme.payloadDigest}</dt>

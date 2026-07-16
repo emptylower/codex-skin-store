@@ -63,7 +63,7 @@ export const messages = {
     focal: "Focal point",
     author: "Author",
     installPrerequisites:
-      "Requires Codex Desktop. Install from the package once authenticated delivery is available.",
+      "Requires Codex Desktop for macOS or Windows. Apply themes using the official Codex install flow for your platform.",
   },
   creator: {
     themes: "Public themes",
@@ -79,7 +79,7 @@ export const messages = {
   policy: {
     terms: "Terms of Service",
     termsBody:
-      "Codex Skin Store is a community marketplace for free Codex Desktop themes. By using this site you agree to share only content you have rights to publish, respect other creators, and accept that listings may be moderated or removed for safety, copyright, or policy reasons. The store does not sell theme packages in this milestone.",
+      "Codex Skin Store is a community marketplace for free Codex Desktop themes. By using this site you agree to share only content you have rights to publish, respect other creators, and accept that listings may be moderated or removed for safety, copyright, or policy reasons. The store does not sell theme packages.",
     privacy: "Privacy Policy",
     privacyBody:
       "We process the minimum data needed to operate a bilingual public marketplace: theme catalog content, public creator profiles, and technical logs required for security and reliability. Do not upload personal data in theme assets or descriptions. Contact the operators if you need a data-related request handled.",

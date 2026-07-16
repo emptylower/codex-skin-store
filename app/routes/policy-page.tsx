@@ -19,6 +19,19 @@ function policyBodyKey(slug: PolicySlug): keyof Messages["policy"] {
   return `${slug}Body` as keyof Messages["policy"];
 }
 
+/** Resolve policy slug from flat path (/:locale/terms) or legacy params.page. */
+function resolvePolicySlug(
+  request: Request,
+  params: { page?: string; locale?: string },
+): string {
+  if (params.page) {
+    return params.page;
+  }
+
+  const segments = new URL(request.url).pathname.split("/").filter(Boolean);
+  return segments.at(-1) ?? "";
+}
+
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: "Codex Skin Store" }];
@@ -29,13 +42,13 @@ export function meta({ data }: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const locale = parseLocale(params.locale ?? "");
   if (!locale) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const page = params.page ?? "";
+  const page = resolvePolicySlug(request, params);
   if (!isPolicySlug(page)) {
     throw new Response("Not Found", { status: 404 });
   }

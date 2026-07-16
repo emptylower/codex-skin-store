@@ -8,6 +8,10 @@ export const marketplaceFilterSchema = z.object({
   mode: z.enum(["light", "dark"]).optional(),
   media: z.enum(["static", "animated"]).optional(),
   taxonomy: z.array(z.string().max(40)).max(4).default([]),
+  /** When set, taxonomy key filters must match this dimension (hub isolation). */
+  taxonomyDimension: z
+    .enum(["style", "mood", "mode", "media", "platform"])
+    .optional(),
   sort: z.enum(["trending", "newest", "downloads"]).default("trending"),
 });
 
@@ -48,6 +52,8 @@ export type ThemeListItem = {
   /** Optional preview facts from manifest when available. */
   preview?: ThemeListPreview;
   taxonomyKeys: string[];
+  /** Dimension+key pairs for hub filtering (keys alone can collide across dimensions). */
+  taxonomies: Array<{ dimension: string; key: string }>;
   createdAt: number;
   updatedAt: number;
 };

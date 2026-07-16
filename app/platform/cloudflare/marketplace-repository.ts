@@ -411,13 +411,14 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
 
   private async loadTaxonomyKeys(
     themeIds: string[],
-  ): Promise<Map<string, string[]>> {
-    const map = new Map<string, string[]>();
+  ): Promise<Map<string, Array<{ dimension: string; key: string }>>> {
+    const map = new Map<string, Array<{ dimension: string; key: string }>>();
     if (themeIds.length === 0) return map;
 
     const rows = await this.db
       .select({
         themeId: themeTaxonomies.themeId,
+        dimension: taxonomies.dimension,
         key: taxonomies.key,
       })
       .from(themeTaxonomies)
@@ -426,7 +427,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
 
     for (const row of rows) {
       const list = map.get(row.themeId) ?? [];
-      list.push(row.key);
+      list.push({ dimension: row.dimension, key: row.key });
       map.set(row.themeId, list);
     }
 
@@ -435,7 +436,7 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
 
   private toListItem(
     row: JoinedThemeRow,
-    taxonomyKeys: string[],
+    taxonomiesForTheme: Array<{ dimension: string; key: string }>,
   ): ThemeListItem | null {
     if (!row.version) return null;
     if (!isPubliclyListable(row.theme)) return null;
@@ -460,7 +461,8 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       previewImage: manifest.previewImage,
       coverImage: manifest.coverImage,
       preview: manifest.preview,
-      taxonomyKeys,
+      taxonomyKeys: taxonomiesForTheme.map((entry) => entry.key),
+      taxonomies: taxonomiesForTheme,
       createdAt: row.theme.createdAt,
       updatedAt: row.theme.updatedAt,
     };
@@ -488,13 +490,21 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
 
     // Strict controlled taxonomy: unknown tokens are dropped; if the caller
     // provided only unknown keys, match nothing (empty list).
+    // When taxonomyDimension is set (taxonomy hubs), keys must match that dimension.
     if (hasTaxonomyFilterInput(filters.taxonomy)) {
       const taxonomyKeys = normalizeTaxonomyFilters(filters.taxonomy);
       if (taxonomyKeys.length === 0) {
         return [];
       }
+      const dimension = filters.taxonomyDimension;
       result = result.filter((item) =>
-        taxonomyKeys.every((key) => item.taxonomyKeys.includes(key)),
+        taxonomyKeys.every((key) =>
+          dimension
+            ? item.taxonomies.some(
+                (entry) => entry.key === key && entry.dimension === dimension,
+              )
+            : item.taxonomyKeys.includes(key),
+        ),
       );
     }
 

@@ -249,6 +249,8 @@ beforeAll(async () => {
 
   await insertTaxonomy("tax-pp-neon", "style", "neon");
   await insertTaxonomy("tax-pp-minimal", "style", "minimal");
+  // Same key under a different dimension — hub filtering must not bleed across dims.
+  await insertTaxonomy("tax-pp-mood-neon", "mood", "neon");
   await insertTaxonomyTranslation(
     "tt-pp-neon-en",
     "tax-pp-neon",
@@ -260,6 +262,12 @@ beforeAll(async () => {
     "tax-pp-minimal",
     "en",
     "Minimal",
+  );
+  await insertTaxonomyTranslation(
+    "tt-pp-mood-neon-en",
+    "tax-pp-mood-neon",
+    "en",
+    "Neon Mood",
   );
 
   await insertTheme({
@@ -302,7 +310,7 @@ beforeAll(async () => {
   });
   await linkTaxonomy("theme-pp-public-lin", "tax-pp-minimal");
 
-  // Private/unlisted theme must not appear on creator profile.
+  // Private/unlisted theme must not appear on creator profile or theme detail.
   await insertTheme({
     id: "theme-pp-unlisted-lin",
     authorId: "user-pp-lin",
@@ -315,6 +323,20 @@ beforeAll(async () => {
     visibility: "unlisted",
     downloads: 999,
   });
+
+  // Theme tagged only with mood/neon (not style/neon).
+  await insertTheme({
+    id: "theme-pp-mood-only",
+    authorId: "user-pp-nova",
+    slug: "pp-mood-neon-only",
+    name: "Mood Neon Only",
+    description: "Tagged as mood/neon for dimension isolation.",
+    platform: "both",
+    mode: "dark",
+    media: "static",
+    downloads: 15,
+  });
+  await linkTaxonomy("theme-pp-mood-only", "tax-pp-mood-neon");
 });
 
 describe("public theme detail", () => {
@@ -348,18 +370,58 @@ describe("public theme detail", () => {
     expect(html).toContain("0.31");
     expect(html).toContain("CC-BY-4.0");
     expect(html).toContain("1");
-    expect(html).toContain("packages/test.zip");
+    expect(html).not.toContain("packages/test.zip");
+    expect(html).not.toContain(data.theme.packageKey ?? "packages/");
+    expect(html).not.toContain(data.messages.theme.packageKey);
     expect(html).toContain("sha256:payload-test");
     expect(html).toContain("sha256:archive-test");
     expect(html).toContain("Nova Chen");
     expect(html).toContain("/en/creators/nova-chen");
     expect(html).toContain("Neon Sibling");
     expect(html).toContain(data.messages.theme.related);
+    expect(html).toContain(data.messages.theme.installPrerequisites);
+    expect(html).not.toMatch(/once available|milestone|roadmap/i);
     // No gated actions yet (Milestone 3). "Downloads" count labels may still appear.
     expect(html).not.toContain(`>${data.messages.actions.download}<`);
     expect(html).not.toContain(data.messages.actions.copyPrompt);
     expect(html).not.toMatch(/sign[- ]?in/i);
     expect(html).not.toMatch(/roadmap/i);
+  });
+
+  it("does not leak packageKey or raw package paths in public HTML", async () => {
+    const data = await themeLoader(
+      themeLoaderArgs(
+        "http://localhost/en/themes/pp-aurora-drive",
+        "en",
+        "pp-aurora-drive",
+      ),
+    );
+
+    expect(data.theme.packageKey).toBe("packages/test.zip");
+
+    const html = renderToStaticMarkup(
+      <ThemeDetail
+        loaderData={data}
+        params={{ locale: "en", slug: "pp-aurora-drive" }}
+        matches={[] as never}
+      />,
+    );
+
+    expect(html).not.toContain("packages/test.zip");
+    expect(html).not.toContain("packageKey");
+    expect(html).not.toContain(data.messages.theme.packageKey);
+  });
+
+  it("404s for unlisted themes", async () => {
+    await expect(
+      themeLoader(
+        themeLoaderArgs(
+          "http://localhost/en/themes/pp-secret-draft",
+          "en",
+          "pp-secret-draft",
+        ),
+      ),
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("404s for unknown locale and missing theme", async () => {
@@ -447,6 +509,32 @@ describe("taxonomy hub", () => {
     expect(html).toContain("Aurora Drive");
     expect(html).toContain("Neon Sibling");
     expect(html).not.toContain("Paper Lane");
+    expect(html).not.toContain("Mood Neon Only");
+  });
+
+  it("isolates taxonomy keys by dimension", async () => {
+    const styleHub = await taxonomyLoader(
+      taxonomyLoaderArgs(
+        "http://localhost/en/taxonomies/style/neon",
+        "en",
+        "style",
+        "neon",
+      ),
+    );
+    const moodHub = await taxonomyLoader(
+      taxonomyLoaderArgs(
+        "http://localhost/en/taxonomies/mood/neon",
+        "en",
+        "mood",
+        "neon",
+      ),
+    );
+
+    expect(styleHub.themes.map((t) => t.slug).sort()).toEqual([
+      "pp-aurora-drive",
+      "pp-neon-sibling",
+    ]);
+    expect(moodHub.themes.map((t) => t.slug)).toEqual(["pp-mood-neon-only"]);
   });
 
   it("404s for unknown locale, dimension, or taxonomy key", async () => {
@@ -486,33 +574,72 @@ describe("taxonomy hub", () => {
 });
 
 describe("policy pages", () => {
-  it("renders reviewed bilingual policy content", async () => {
+  it("renders reviewed bilingual policy content on flat paths", async () => {
     for (const page of ["terms", "privacy", "copyright", "about"] as const) {
       const data = await policyLoader(
-        policyLoaderArgs(`http://localhost/en/policies/${page}`, "en", page),
+        policyLoaderArgs(`http://localhost/en/${page}`, "en", page),
       );
       const html = renderToStaticMarkup(
         <PolicyPage
           loaderData={data}
-          params={{ locale: "en", page }}
+          params={{ locale: "en" }}
           matches={[] as never}
         />,
       );
       expect(html).toContain(data.messages.policy[page]);
       expect(html.length).toBeGreaterThan(80);
+      expect(html).not.toMatch(/milestone|本里程碑/i);
     }
+  });
+
+  it("renders zh-hans policy body content", async () => {
+    const data = await policyLoader(
+      policyLoaderArgs("http://localhost/zh-hans/terms", "zh-hans", "terms"),
+    );
+    const html = renderToStaticMarkup(
+      <PolicyPage
+        loaderData={data}
+        params={{ locale: "zh-hans" }}
+        matches={[] as never}
+      />,
+    );
+
+    expect(html).toContain(data.messages.policy.terms);
+    expect(html).toContain(data.messages.policy.termsBody.slice(0, 24));
+    expect(html).not.toContain("本里程碑");
+    expect(html).toContain("不售卖主题安装包");
+  });
+
+  it("resolves policy slug from the flat URL path when params.page is absent", async () => {
+    const data = await policyLoader({
+      request: new Request("http://localhost/en/privacy"),
+      params: { locale: "en" },
+      context: {
+        cloudflare: {
+          env,
+          ctx: {
+            waitUntil() {},
+            passThroughOnException() {},
+            props: {},
+          },
+        },
+      },
+    } as unknown as Parameters<typeof policyLoader>[0]);
+
+    expect(data.page).toBe("privacy");
+    expect(data.title).toBe(data.messages.policy.privacy);
   });
 
   it("404s for unknown policy slug or locale", async () => {
     await expect(
       policyLoader(
-        policyLoaderArgs("http://localhost/en/policies/cookies", "en", "cookies"),
+        policyLoaderArgs("http://localhost/en/cookies", "en", "cookies"),
       ),
     ).rejects.toMatchObject({ status: 404 });
 
     await expect(
       policyLoader(
-        policyLoaderArgs("http://localhost/fr/policies/terms", "fr", "terms"),
+        policyLoaderArgs("http://localhost/fr/terms", "fr", "terms"),
       ),
     ).rejects.toMatchObject({ status: 404 });
   });

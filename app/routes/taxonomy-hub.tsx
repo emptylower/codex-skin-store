@@ -1,6 +1,5 @@
 import { Breadcrumbs } from "~/components/breadcrumbs";
 import { ThemeCard } from "~/components/theme-card";
-import { TAXONOMY_DIMENSIONS } from "~/db/schema/catalog";
 import {
   htmlLang,
   localePath,
@@ -9,9 +8,22 @@ import {
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import { createServices } from "~/services/create-services.server";
+import type { MarketplaceFilters } from "~/services/marketplace/types";
 import type { Route } from "./+types/taxonomy-hub";
 
-const CONTROLLED_DIMENSIONS = new Set<string>(TAXONOMY_DIMENSIONS);
+type TaxonomyDimension = NonNullable<MarketplaceFilters["taxonomyDimension"]>;
+
+const CONTROLLED_DIMENSIONS = new Set<TaxonomyDimension>([
+  "style",
+  "mood",
+  "mode",
+  "media",
+  "platform",
+]);
+
+function isTaxonomyDimension(value: string): value is TaxonomyDimension {
+  return CONTROLLED_DIMENSIONS.has(value as TaxonomyDimension);
+}
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
@@ -34,7 +46,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const dimension = params.dimension ?? "";
   const key = params.key ?? "";
-  if (!dimension || !key || !CONTROLLED_DIMENSIONS.has(dimension)) {
+  if (!dimension || !key || !isTaxonomyDimension(dimension)) {
     throw new Response("Not Found", { status: 404 });
   }
 
@@ -47,6 +59,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const { items: themes } = await marketplace.listThemes(locale, {
     taxonomy: [key],
+    taxonomyDimension: dimension,
     sort: "trending",
   });
 
