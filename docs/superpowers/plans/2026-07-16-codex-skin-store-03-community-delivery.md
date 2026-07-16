@@ -40,6 +40,7 @@ tests/{unit,integration,routes,e2e}/
 ### Task 1: Add engagement, comment, report, and intent schema
 
 **Files:**
+
 - Create: `migrations/0003_engagement_community.sql`, `app/db/schema/engagement.ts`, `app/db/schema/moderation.ts`, `tests/integration/engagement-migration.test.ts`
 
 - [ ] **Step 1: Write the failing migration test**
@@ -49,8 +50,12 @@ Assert tables `auth_intents`, `favorites`, `comments`, `reports`, `moderation_ac
 ```ts
 await expect(
   env.DB.batch([
-    env.DB.prepare("INSERT INTO favorites(user_id,theme_id,created_at) VALUES(?,?,?)").bind("u1","t1",1),
-    env.DB.prepare("INSERT INTO favorites(user_id,theme_id,created_at) VALUES(?,?,?)").bind("u1","t1",2),
+    env.DB.prepare(
+      "INSERT INTO favorites(user_id,theme_id,created_at) VALUES(?,?,?)",
+    ).bind("u1", "t1", 1),
+    env.DB.prepare(
+      "INSERT INTO favorites(user_id,theme_id,created_at) VALUES(?,?,?)",
+    ).bind("u1", "t1", 2),
   ]),
 ).rejects.toThrow();
 ```
@@ -145,6 +150,7 @@ git commit -m "feat(engagement): add community schema"
 ### Task 2: Implement signed, expiring, single-use auth intents
 
 **Files:**
+
 - Create: `app/domain/engagement/intent.ts`, `app/services/identity/intents.server.ts`, `tests/unit/auth-intent.test.ts`, `tests/integration/auth-intent-store.test.ts`
 - Modify: sign-in and OAuth completion routes from Milestone 2
 
@@ -193,6 +199,7 @@ git commit -m "feat(auth): preserve gated user intents"
 ### Task 3: Add authorized package download and prompt delivery
 
 **Files:**
+
 - Create: `app/services/engagement/delivery.server.ts`, `app/platform/cloudflare/package-download.server.ts`, `app/routes/theme-download.ts`, `app/routes/theme-prompt.tsx`, `app/components/delivery-actions.tsx`, `tests/integration/delivery.test.ts`, `tests/routes/delivery-routes.test.tsx`
 - Modify: `app/routes/theme-detail.tsx`, `app/routes.ts`
 
@@ -208,7 +215,10 @@ Set:
 
 ```ts
 headers.set("Content-Type", "application/zip");
-headers.set("Content-Disposition", `attachment; filename="codex-theme-${safeSlug}.zip"`);
+headers.set(
+  "Content-Disposition",
+  `attachment; filename="codex-theme-${safeSlug}.zip"`,
+);
 headers.set("ETag", object.httpEtag);
 headers.set("X-Content-Type-Options", "nosniff");
 headers.set("Cache-Control", "private, no-store");
@@ -232,6 +242,7 @@ git commit -m "feat(delivery): add secure package and prompt access"
 ### Task 4: Implement favorites and personal library
 
 **Files:**
+
 - Create: `app/services/engagement/favorites.server.ts`, `app/routes/favorite.ts`, `app/routes/me-favorites.tsx`, `app/components/favorite-button.tsx`, `tests/integration/favorites.test.ts`, `tests/e2e/favorites.spec.ts`
 - Modify: theme card/detail, routes registry
 
@@ -259,6 +270,7 @@ git commit -m "feat(favorites): add personal theme library"
 ### Task 5: Add append-only delivery events, trend score, and reconciliation
 
 **Files:**
+
 - Create: `app/services/engagement/events.server.ts`, `app/domain/engagement/trend.ts`, `app/services/engagement/counters.server.ts`, `tests/unit/trend-score.test.ts`, `tests/integration/event-counters.test.ts`
 - Modify: delivery/favorite services, `workers/app.ts`, marketplace sort service
 
@@ -269,7 +281,8 @@ Assert distinct user/theme deliveries count once per seven-day window for the no
 Use a deterministic score:
 
 ```ts
-score = recentUniqueDeliveries * 5 + recentFavorites * 2 + Math.max(0, 14 - ageDays);
+score =
+  recentUniqueDeliveries * 5 + recentFavorites * 2 + Math.max(0, 14 - ageDays);
 ```
 
 - [ ] **Step 2: Record only completed actions**
@@ -292,6 +305,7 @@ git commit -m "feat(metrics): add delivery events and trend ranking"
 ### Task 6: Add safe first-level comments
 
 **Files:**
+
 - Create: `app/domain/comments/policy.ts`, `app/services/comments/comments.server.ts`, `app/routes/theme-comments.ts`, `app/components/comment-list.tsx`, `app/components/comment-form.tsx`, `tests/unit/comment-policy.test.ts`, `tests/integration/comments.test.ts`, `tests/e2e/comments.spec.ts`
 - Modify: theme detail route/service
 
@@ -321,6 +335,7 @@ git commit -m "feat(comments): add theme discussions"
 ### Task 7: Add unified reports and abuse controls
 
 **Files:**
+
 - Create: `app/services/moderation/reports.server.ts`, `app/platform/cloudflare/rate-limit.server.ts`, `app/routes/report.ts`, `app/components/report-dialog.tsx`, `tests/unit/report-policy.test.ts`, `tests/integration/reports.test.ts`, `tests/e2e/reports.spec.ts`
 
 - [ ] **Step 1: Write failing report tests**
@@ -331,7 +346,12 @@ Controlled reasons: `copyright`, `sexual_content`, `harassment`, `malware_or_uns
 
 ```ts
 export interface AbuseGate {
-  check(input: { action: "comment" | "report"; userId: string; ipHash: string; turnstileToken?: string }): Promise<{ allowed: boolean; challengeRequired: boolean }>;
+  check(input: {
+    action: "comment" | "report";
+    userId: string;
+    ipHash: string;
+    turnstileToken?: string;
+  }): Promise<{ allowed: boolean; challengeRequired: boolean }>;
 }
 ```
 
@@ -353,6 +373,7 @@ git commit -m "feat(reports): add community abuse reporting"
 ### Task 8: Implement account deletion and anonymization
 
 **Files:**
+
 - Create: `app/services/identity/delete-account.server.ts`, `app/routes/account-delete.tsx`, `tests/integration/account-deletion.test.ts`, `tests/e2e/account-deletion.spec.ts`
 - Modify: profile navigation
 
@@ -376,6 +397,7 @@ git commit -m "feat(identity): add account deletion and anonymization"
 ### Task 9: Complete the consumer/community checkpoint
 
 **Files:**
+
 - Create: `tests/e2e/delivery-auth-intent.spec.ts`, `tests/e2e/community-mobile.spec.ts`
 - Modify: `README.md`, `app/styles/app.css`, relevant error boundaries
 

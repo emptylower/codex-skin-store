@@ -84,22 +84,22 @@ Moderation, takedown handling, translation review, programmatic landing eligibil
 
 ## Approved Spec Coverage
 
-| Approved spec section | Owning implementation plan |
-| --- | --- |
-| 1 Product definition and non-goals | Roadmap scope; P0 routes in Plans 1-4; P1 remains excluded |
-| 2 Primary journeys | Discovery in Plan 1, creator in Plan 2, delivery/community in Plan 3, moderator in Plan 4 |
-| 3 Information architecture | Public routes Plan 1, authenticated routes Plans 2-3, administrative routes Plan 4 |
-| 4 Cloudflare architecture | Worker/D1 foundation Plan 1, Auth/R2/Queue/Images Plan 2, scheduled reconciliation Plan 3 |
-| 5 Theme package contract | Plan 2 |
-| 6 Data model and state/deletion | Catalog Plan 1, identity/version/jobs Plan 2, engagement/deletion Plan 3, review/audit Plan 4 |
-| 7 Comments, moderation, and licenses | License declaration Plan 2, comments/reports Plan 3, admin/takedown Plan 4 |
-| 8 SEO and programmatic i18n | Baseline SSR/canonical Plan 1, review/registry/full rollout Plan 4 |
-| 9 Ranking, search, and internal links | Search/links Plan 1, event-backed trend Plan 3 |
-| 10 Error handling and safety | Trust boundaries and negative tests across all four plans |
-| 11 Analytics and success | Events/counters Plan 3, release metrics Plan 4 |
-| 12 Release priorities | P0 across Plans 1-4; P1 excluded from schemas/routes |
-| 13 Testing and acceptance | Incremental gates in each plan; full release matrix Plan 4 |
-| 14 Product risks | Cross-plan gates below plus license/takedown/SEO gates in Plans 2 and 4 |
+| Approved spec section                 | Owning implementation plan                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 1 Product definition and non-goals    | Roadmap scope; P0 routes in Plans 1-4; P1 remains excluded                                    |
+| 2 Primary journeys                    | Discovery in Plan 1, creator in Plan 2, delivery/community in Plan 3, moderator in Plan 4     |
+| 3 Information architecture            | Public routes Plan 1, authenticated routes Plans 2-3, administrative routes Plan 4            |
+| 4 Cloudflare architecture             | Worker/D1 foundation Plan 1, Auth/R2/Queue/Images Plan 2, scheduled reconciliation Plan 3     |
+| 5 Theme package contract              | Plan 2                                                                                        |
+| 6 Data model and state/deletion       | Catalog Plan 1, identity/version/jobs Plan 2, engagement/deletion Plan 3, review/audit Plan 4 |
+| 7 Comments, moderation, and licenses  | License declaration Plan 2, comments/reports Plan 3, admin/takedown Plan 4                    |
+| 8 SEO and programmatic i18n           | Baseline SSR/canonical Plan 1, review/registry/full rollout Plan 4                            |
+| 9 Ranking, search, and internal links | Search/links Plan 1, event-backed trend Plan 3                                                |
+| 10 Error handling and safety          | Trust boundaries and negative tests across all four plans                                     |
+| 11 Analytics and success              | Events/counters Plan 3, release metrics Plan 4                                                |
+| 12 Release priorities                 | P0 across Plans 1-4; P1 excluded from schemas/routes                                          |
+| 13 Testing and acceptance             | Incremental gates in each plan; full release matrix Plan 4                                    |
+| 14 Product risks                      | Cross-plan gates below plus license/takedown/SEO gates in Plans 2 and 4                       |
 
 ## Cross-Plan Risk Gates
 

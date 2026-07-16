@@ -4,6 +4,8 @@
 .env*
 node_modules/
 .wrangler/
+.react-router/
 dist/
 build/
 .worktrees/
+*.tsbuildinfo

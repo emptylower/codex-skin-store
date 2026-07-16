@@ -40,6 +40,7 @@ tests/{unit,integration,routes,seo,e2e}/
 ### Task 1: Initialize and scaffold the Worker
 
 **Files:**
+
 - Preserve: `.gitignore`, `docs/superpowers/**`
 - Create: `package.json`, `tsconfig.json`, `vite.config.ts`, `react-router.config.ts`, `wrangler.json`, `workers/app.ts`, `app/root.tsx`, `app/routes.ts`, `app/routes/home.tsx`, `app/styles/app.css`, `eslint.config.js`, `vitest.config.ts`, `playwright.config.ts`
 
@@ -186,6 +187,7 @@ Expected: typecheck/build exit 0 and the first commit includes the approved docs
 ### Task 2: Add locale routing and reviewed messages
 
 **Files:**
+
 - Create: `app/i18n/config.ts`, `app/i18n/messages/en.ts`, `app/i18n/messages/zh-hans.ts`, `app/routes/locale-redirect.tsx`, `tests/unit/i18n.test.ts`
 - Modify: `app/root.tsx`, `app/routes.ts`
 
@@ -201,7 +203,9 @@ describe("locale config", () => {
     expect(parseLocale("fr")).toBeNull();
   });
   it("keeps entity slugs unchanged", () => {
-    expect(localePath("zh-hans", "/themes/neon-road")).toBe("/zh-hans/themes/neon-road");
+    expect(localePath("zh-hans", "/themes/neon-road")).toBe(
+      "/zh-hans/themes/neon-road",
+    );
   });
 });
 ```
@@ -240,6 +244,7 @@ git commit -m "feat(i18n): add locale-first routing"
 ### Task 3: Create catalog schema, migration, and deterministic seed
 
 **Files:**
+
 - Create: `app/db/schema/catalog.ts`, `app/db/schema/seo.ts`, `app/db/client.server.ts`, `migrations/0001_catalog.sql`, `scripts/seed-local.sql`, `tests/integration/catalog-migration.test.ts`, `test/apply-migrations.ts`, `vitest.config.ts`, `vitest.workers.config.ts`, `test/setup-dom.ts`
 
 - [ ] **Step 1: Write failing migration test**
@@ -247,8 +252,17 @@ git commit -m "feat(i18n): add locale-first routing"
 Test that `users`, `themes`, `theme_versions`, `theme_translations`, `taxonomies`, `taxonomy_translations`, `theme_taxonomies`, `seo_landings`, and `seo_landing_translations` exist and that duplicate theme slugs and duplicate taxonomy keys fail.
 
 ```ts
-const tables = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-expect(tables.results.map((row) => row.name)).toEqual(expect.arrayContaining(["themes", "theme_versions", "theme_translations", "taxonomies"]));
+const tables = await env.DB.prepare(
+  "SELECT name FROM sqlite_master WHERE type='table'",
+).all();
+expect(tables.results.map((row) => row.name)).toEqual(
+  expect.arrayContaining([
+    "themes",
+    "theme_versions",
+    "theme_translations",
+    "taxonomies",
+  ]),
+);
 ```
 
 Run `npm run test:workers -- tests/integration/catalog-migration.test.ts`. Expected: FAIL because the migration is absent.
@@ -318,6 +332,7 @@ git commit -m "feat(catalog): add D1 schema and seed data"
 ### Task 4: Implement pure theme and taxonomy rules
 
 **Files:**
+
 - Create: `app/domain/themes/slug.ts`, `app/domain/themes/state.ts`, `app/domain/taxonomy/normalize.ts`, `tests/unit/theme-domain.test.ts`, `tests/unit/taxonomy.test.ts`
 
 - [ ] **Step 1: Write failing rule tests**
@@ -325,8 +340,20 @@ git commit -m "feat(catalog): add D1 schema and seed data"
 Cover lowercase ASCII slug normalization, collision suffixing, immutable published slugs, public eligibility, and synonyms (`sci fi`, `sci-fi`, `科幻` → `science-fiction`).
 
 ```ts
-expect(canDownload({ visibility: "public", moderationStatus: "clean", packageStatus: "ready" })).toBe(true);
-expect(canDownload({ visibility: "public", moderationStatus: "removed", packageStatus: "ready" })).toBe(false);
+expect(
+  canDownload({
+    visibility: "public",
+    moderationStatus: "clean",
+    packageStatus: "ready",
+  }),
+).toBe(true);
+expect(
+  canDownload({
+    visibility: "public",
+    moderationStatus: "removed",
+    packageStatus: "ready",
+  }),
+).toBe(false);
 ```
 
 Run `npm run test:unit -- tests/unit/theme-domain.test.ts tests/unit/taxonomy.test.ts`. Expected: FAIL.
@@ -335,7 +362,11 @@ Run `npm run test:unit -- tests/unit/theme-domain.test.ts tests/unit/taxonomy.te
 
 ```ts
 export function canDownload(theme: ThemeState) {
-  return theme.visibility === "public" && theme.moderationStatus !== "removed" && theme.packageStatus === "ready";
+  return (
+    theme.visibility === "public" &&
+    theme.moderationStatus !== "removed" &&
+    theme.packageStatus === "ready"
+  );
 }
 ```
 
@@ -355,6 +386,7 @@ git commit -m "feat(domain): add theme and taxonomy rules"
 ### Task 5: Build marketplace query services
 
 **Files:**
+
 - Create: `app/platform/ports.ts`, `app/services/marketplace/types.ts`, `app/services/marketplace/list-themes.server.ts`, `app/services/marketplace/get-theme.server.ts`, `app/services/marketplace/get-creator.server.ts`, `app/services/marketplace/related-themes.server.ts`, `tests/integration/marketplace-queries.test.ts`
 
 - [ ] **Step 1: Write failing query tests**
@@ -392,6 +424,7 @@ git commit -m "feat(marketplace): add public catalog queries"
 ### Task 6: Build the theme grid and Codex simulator
 
 **Files:**
+
 - Create: `app/components/theme-card.tsx`, `app/components/filter-bar.tsx`, `app/components/theme-preview/theme-preview.tsx`, `app/components/theme-preview/codex-home.tsx`, `app/components/theme-preview/codex-task.tsx`, `app/routes/marketplace.tsx`, `tests/routes/marketplace.test.tsx`, `tests/unit/theme-preview.test.tsx`
 - Modify: `app/styles/app.css`, `app/routes.ts`
 
@@ -429,6 +462,7 @@ git commit -m "feat(ui): add marketplace and theme simulator"
 ### Task 7: Add theme, creator, taxonomy, and policy pages
 
 **Files:**
+
 - Create: `app/routes/theme-detail.tsx`, `app/routes/creator-profile.tsx`, `app/routes/taxonomy-hub.tsx`, `app/routes/policy-page.tsx`, `app/components/breadcrumbs.tsx`, `app/components/theme-facts.tsx`, `tests/routes/public-pages.test.tsx`
 - Modify: `app/routes.ts`
 
@@ -456,6 +490,7 @@ git commit -m "feat(pages): add public theme and creator routes"
 ### Task 8: Add canonical, hreflang, structured data, robots, and sitemaps
 
 **Files:**
+
 - Create: `app/services/seo/meta.server.ts`, `app/services/seo/index-policy.ts`, `app/services/seo/structured-data.ts`, `app/routes/robots[.]txt.ts`, `app/routes/sitemap[.]xml.ts`, `tests/seo/public-seo.test.ts`, `tests/unit/index-policy.test.ts`
 - Modify: public route meta exports, `app/routes.ts`
 
@@ -467,10 +502,12 @@ For one theme in both locales assert self-canonical, reciprocal `en`/`zh-Hans`, 
 
 ```ts
 export function isIndexableTheme(theme: ThemeSeoRecord, locale: Locale) {
-  return theme.visibility === "public" &&
+  return (
+    theme.visibility === "public" &&
     theme.moderationStatus !== "removed" &&
     theme.packageStatus === "ready" &&
-    theme.translationStatus[locale] === "reviewed";
+    theme.translationStatus[locale] === "reviewed"
+  );
 }
 ```
 
@@ -492,6 +529,7 @@ git commit -m "feat(seo): add bilingual crawl foundation"
 ### Task 9: Complete browser, accessibility, and checkpoint verification
 
 **Files:**
+
 - Create: `tests/e2e/public-marketplace.spec.ts`, `tests/e2e/public-seo.spec.ts`, `tests/e2e/accessibility.spec.ts`, `public/_headers`
 - Modify: `playwright.config.ts`, `app/styles/app.css`, `README.md`
 

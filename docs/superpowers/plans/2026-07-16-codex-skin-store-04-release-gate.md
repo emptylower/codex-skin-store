@@ -34,6 +34,7 @@ docs/runbooks/{moderation,takedown,seo-rollout,deployment}.md
 ### Task 1: Extend moderation, SEO review, takedown, and metric schema
 
 **Files:**
+
 - Create: `migrations/0004_release_gate.sql`, `app/db/schema/analytics.ts`, `tests/integration/release-migration.test.ts`
 - Modify: `app/db/schema/moderation.ts`, `app/db/schema/seo.ts`
 
@@ -84,6 +85,7 @@ Expected: migration and test pass.
 ### Task 2: Enforce administrator authorization and immutable audit actions
 
 **Files:**
+
 - Create: `app/domain/moderation/policy.ts`, `app/services/moderation/audit.server.ts`, `app/services/moderation/admin.server.ts`, `tests/unit/moderation-policy.test.ts`, `tests/integration/admin-actions.test.ts`
 
 - [ ] **Step 1: Write failing permission tests**
@@ -116,6 +118,7 @@ git commit -m "feat(admin): enforce moderation policies and audit"
 ### Task 3: Build the minimal moderation console
 
 **Files:**
+
 - Create: `app/routes/admin.reports.tsx`, `app/routes/admin.theme.tsx`, `app/routes/admin.user.tsx`, `app/components/admin/report-table.tsx`, `app/components/admin/action-form.tsx`, `tests/routes/admin-routes.test.tsx`, `tests/e2e/admin-moderation.spec.ts`
 - Modify: `app/routes.ts`
 
@@ -139,6 +142,7 @@ git commit -m "feat(admin): add moderation console"
 ### Task 4: Implement copyright/takedown intake and evidence retention
 
 **Files:**
+
 - Create: `app/services/moderation/takedown.server.ts`, `app/routes/copyright-report.tsx`, `tests/unit/takedown-policy.test.ts`, `tests/integration/takedown.test.ts`, `tests/e2e/takedown.spec.ts`, `docs/runbooks/takedown.md`
 - Modify: copyright policy page and R2 object policy
 
@@ -166,6 +170,7 @@ git commit -m "feat(copyright): add takedown workflow"
 ### Task 5: Implement translation review and hreflang parity
 
 **Files:**
+
 - Create: `app/domain/seo/hreflang.ts`, `app/services/seo/translations.server.ts`, `tests/unit/hreflang.test.ts`, `tests/seo/translation-parity.test.ts`
 - Modify: public route metadata and sitemap service
 
@@ -193,6 +198,7 @@ git commit -m "feat(i18n): add translation review and hreflang parity"
 ### Task 6: Implement controlled programmatic landing eligibility
 
 **Files:**
+
 - Create: `app/domain/seo/eligibility.ts`, `app/domain/seo/uniqueness.ts`, `app/services/seo/landings.server.ts`, `app/routes/admin.seo-landings.tsx`, `app/routes/seo-landing.tsx`, `app/components/seo/landing-review.tsx`, `tests/unit/landing-eligibility.test.ts`, `tests/integration/seo-landings.test.ts`, `tests/routes/seo-landing.test.tsx`
 - Modify: `app/routes.ts`
 
@@ -238,6 +244,7 @@ git commit -m "feat(seo): add controlled landing registry"
 ### Task 7: Complete structured data, sitemaps, and index controls
 
 **Files:**
+
 - Create: `app/services/seo/sitemap.server.ts`, `tests/seo/release-seo.test.ts`
 - Modify: `app/services/seo/structured-data.ts`, `app/routes/sitemap[.]xml.ts`, `app/routes/robots[.]txt.ts`, theme/comment/creator/landing routes
 
@@ -270,6 +277,7 @@ git commit -m "feat(seo): complete structured index controls"
 ### Task 8: Add operational metrics and release targets
 
 **Files:**
+
 - Create: `app/services/analytics/metrics.server.ts`, `app/routes/analytics-export.ts`, `scripts/export-metrics.ts`, `tests/integration/metrics.test.ts`, `docs/runbooks/seo-rollout.md`
 
 - [ ] **Step 1: Write failing metric tests**
@@ -296,6 +304,7 @@ git commit -m "feat(analytics): add release metrics and SEO rollout"
 ### Task 9: Run accessibility, security, compatibility, and performance gates
 
 **Files:**
+
 - Create: `tests/e2e/release-accessibility.spec.ts`, `tests/e2e/release-security.spec.ts`, `tests/e2e/release-mobile.spec.ts`, `tests/packages/runtime-compatibility.test.ts`, `scripts/release-check.ts`, `docs/runbooks/moderation.md`
 - Modify: `package.json`, affected UI/styles
 
@@ -336,6 +345,7 @@ git commit -m "test: enforce MVP release gates"
 ### Task 10: Write and rehearse the approval-gated deployment runbook
 
 **Files:**
+
 - Create: `docs/runbooks/deployment.md`, `.dev.vars.example`
 - Modify: `README.md`, `wrangler.json`
 

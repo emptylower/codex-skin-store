@@ -31,11 +31,7 @@ export default [
       "no-restricted-imports": [
         "error",
         {
-          patterns: [
-            "cloudflare:*",
-            "~/db/**",
-            "~/platform/cloudflare/**",
-          ],
+          patterns: ["cloudflare:*", "~/db/**", "~/platform/cloudflare/**"],
         },
       ],
     },

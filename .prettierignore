@@ -1,0 +1,11 @@
+node_modules
+build
+dist
+.wrangler
+.react-router
+worker-configuration.d.ts
+package-lock.json
+.worktrees
+coverage
+playwright-report
+test-results

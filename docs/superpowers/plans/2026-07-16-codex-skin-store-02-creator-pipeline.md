@@ -58,6 +58,7 @@ tests/{unit,integration,packages,routes,e2e}/       # tests named in tasks below
 ### Task 1: Bindings, D1 State, Better Auth, and Profiles
 
 **Files:**
+
 - Modify: `package.json`, `package-lock.json`, `wrangler.json`, `worker-configuration.d.ts`, `app/routes.ts`
 - Create: `migrations/0002_creator_pipeline.sql`
 - Create: `app/db/schema/identity.ts`, `app/db/schema/creator-pipeline.ts`
@@ -71,12 +72,25 @@ tests/{unit,integration,packages,routes,e2e}/       # tests named in tasks below
 it("links verified matching OAuth identities to one profile", async () => {
   const auth = createAuth(env, "https://store.test");
   expect(auth.options.account?.accountLinking).toMatchObject({
-    enabled: true, allowDifferentEmails: false, requireLocalEmailVerified: true,
+    enabled: true,
+    allowDifferentEmails: false,
+    requireLocalEmailVerified: true,
   });
-  expect(auth.options.account?.accountLinking?.trustedProviders).toBeUndefined();
-  await updateProfile(env.DB, "user-1", { handle: " Neon_Rider ", displayName: "Neon Rider", bio: "Theme maker" });
-  await expect(updateProfile(env.DB, "user-2", { handle: "neon rider", displayName: "Other", bio: "" }))
-    .rejects.toMatchObject({ code: "handle_taken" });
+  expect(
+    auth.options.account?.accountLinking?.trustedProviders,
+  ).toBeUndefined();
+  await updateProfile(env.DB, "user-1", {
+    handle: " Neon_Rider ",
+    displayName: "Neon Rider",
+    bio: "Theme maker",
+  });
+  await expect(
+    updateProfile(env.DB, "user-2", {
+      handle: "neon rider",
+      displayName: "Other",
+      bio: "",
+    }),
+  ).rejects.toMatchObject({ code: "handle_taken" });
 });
 ```
 
@@ -88,25 +102,46 @@ Expected: FAIL with missing `createAuth` and `updateProfile` exports.
 - [ ] **Step 3: Install dependencies and configure bindings**
 
 Run:
+
 ```bash
 npm install better-auth@1.6.23 @better-auth/drizzle-adapter@1.6.23 aws4fetch@1.0.20 image-size@2.0.2 @cf-wasm/photon@0.3.7 client-zip@2.5.0 fflate@0.8.2
 npm install -D @better-auth/cli@1.4.21 drizzle-kit@0.31.10
 ```
 
 Merge into `wrangler.json`:
+
 ```jsonc
 {
   "r2_buckets": [
-    { "binding": "SOURCES", "bucket_name": "codex-skin-store-sources", "preview_bucket_name": "codex-skin-store-sources-preview" },
-    { "binding": "PACKAGES", "bucket_name": "codex-skin-store-packages", "preview_bucket_name": "codex-skin-store-packages-preview" }
+    {
+      "binding": "SOURCES",
+      "bucket_name": "codex-skin-store-sources",
+      "preview_bucket_name": "codex-skin-store-sources-preview",
+    },
+    {
+      "binding": "PACKAGES",
+      "bucket_name": "codex-skin-store-packages",
+      "preview_bucket_name": "codex-skin-store-packages-preview",
+    },
   ],
   "queues": {
-    "producers": [{ "binding": "PACKAGE_QUEUE", "queue": "codex-skin-store-packages" }],
-    "consumers": [{ "queue": "codex-skin-store-packages", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 8, "retry_delay": 30, "dead_letter_queue": "codex-skin-store-packages-dlq" }]
+    "producers": [
+      { "binding": "PACKAGE_QUEUE", "queue": "codex-skin-store-packages" },
+    ],
+    "consumers": [
+      {
+        "queue": "codex-skin-store-packages",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 8,
+        "retry_delay": 30,
+        "dead_letter_queue": "codex-skin-store-packages-dlq",
+      },
+    ],
   },
   "images": { "binding": "IMAGES" },
   "triggers": { "crons": ["*/5 * * * *"] },
-  "vars": { "ENABLE_GIF_UPLOADS": "false", "ZIP_WRITER": "fflate" }
+  "vars": { "ENABLE_GIF_UPLOADS": "false", "ZIP_WRITER": "fflate" },
 }
 ```
 
@@ -155,18 +190,42 @@ Map every column with `sqliteTable`; Better Auth properties map `name -> display
 ```ts
 export function createAuth(env: Env, origin: string) {
   return betterAuth({
-    baseURL: origin, basePath: "/api/auth", secret: env.BETTER_AUTH_SECRET, trustedOrigins: [origin],
-    database: drizzleAdapter(drizzle(env.DB, { schema }), { provider: "sqlite", schema, usePlural: true }),
+    baseURL: origin,
+    basePath: "/api/auth",
+    secret: env.BETTER_AUTH_SECRET,
+    trustedOrigins: [origin],
+    database: drizzleAdapter(drizzle(env.DB, { schema }), {
+      provider: "sqlite",
+      schema,
+      usePlural: true,
+    }),
     user: { modelName: "users" },
-    account: { modelName: "accounts", accountLinking: { enabled: true, allowDifferentEmails: false, requireLocalEmailVerified: true } },
+    account: {
+      modelName: "accounts",
+      accountLinking: {
+        enabled: true,
+        allowDifferentEmails: false,
+        requireLocalEmailVerified: true,
+      },
+    },
     socialProviders: {
-      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
-      github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET, scope: ["user:email"] },
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+      github: {
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+        scope: ["user:email"],
+      },
     },
   });
 }
 export async function requireUser(request: Request, env: Env) {
-  const session = await createAuth(env, new URL(request.url).origin).api.getSession({ headers: request.headers });
+  const session = await createAuth(
+    env,
+    new URL(request.url).origin,
+  ).api.getSession({ headers: request.headers });
   if (!session) throw new Response("Authentication required", { status: 401 });
   return session.user;
 }
@@ -187,6 +246,7 @@ git commit -m "feat: add creator identity and profile state"
 ### Task 2: Draft Contract, Direct Quarantine Upload, and Explicit Complete
 
 **Files:**
+
 - Create: `app/domain/themes/creator-input.ts`, `app/domain/themes/state.ts`
 - Create: `app/platform/ports.ts`, `app/platform/cloudflare/r2-presign.server.ts`, `app/platform/cloudflare/r2-sources.server.ts`, `app/platform/cloudflare/package-queue.server.ts`
 - Create: `app/services/creator-themes.server.ts`, `app/services/uploads.server.ts`
@@ -198,8 +258,18 @@ git commit -m "feat: add creator identity and profile state"
 ```ts
 it("creates one private draft and queues completion once", async () => {
   const draft = await createDraft(deps, validCreatorInput);
-  expect(draft).toMatchObject({ version: 1, visibility: "draft", packageStatus: "processing" });
-  const issued = await issueUpload(deps, { userId: "u1", themeId: draft.themeId, version: 1, contentType: "image/png", bytes: 1024 });
+  expect(draft).toMatchObject({
+    version: 1,
+    visibility: "draft",
+    packageStatus: "processing",
+  });
+  const issued = await issueUpload(deps, {
+    userId: "u1",
+    themeId: draft.themeId,
+    version: 1,
+    contentType: "image/png",
+    bytes: 1024,
+  });
   expect(issued.key).toMatch(/^quarantine\/.+\/versions\/1\/[0-9a-f-]+$/);
   await completeUpload(deps, { userId: "u1", uploadId: issued.uploadId });
   await completeUpload(deps, { userId: "u1", uploadId: issued.uploadId });
@@ -215,18 +285,62 @@ Expected: FAIL with missing draft/upload services.
 - [ ] **Step 3: Define and enforce creator input**
 
 ```ts
-export const creatorInputSchema = z.object({
-  sourceLocale: z.enum(["en","zh-hans"]), name: z.string().trim().min(2).max(80), description: z.string().trim().min(20).max(500),
-  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64),
-  license: z.enum(["CC0-1.0","CC-BY-4.0","PERSONAL-REDISTRIBUTION-1.0"]), attribution: z.string().trim().max(200),
-  sourceUrl: z.union([z.literal(""), z.string().url().refine(v => /^https?:/.test(v))]),
-  platforms: z.array(z.enum(["macos","windows"])).min(1).max(2), appearance: z.enum(["light","dark"]), mediaType: z.enum(["static","animated"]),
-  accent: hex, secondary: hex, highlight: hex, focalPoint: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }),
-  compatibilityTargets: z.array(z.enum([MACOS_TARGET,WINDOWS_TARGET])).min(1).max(2), rightsDeclared: z.literal(true),
-}).superRefine((v, ctx) => {
-  if (v.mediaType === "animated" && (v.platforms.length !== 1 || v.platforms[0] !== "windows")) ctx.addIssue({ code:"custom", path:["platforms"], message:"animated_requires_windows_only" });
-  if (v.license === "CC-BY-4.0" && !v.attribution) ctx.addIssue({ code:"custom", path:["attribution"], message:"attribution_required" });
-});
+export const creatorInputSchema = z
+  .object({
+    sourceLocale: z.enum(["en", "zh-hans"]),
+    name: z.string().trim().min(2).max(80),
+    description: z.string().trim().min(20).max(500),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .max(64),
+    license: z.enum(["CC0-1.0", "CC-BY-4.0", "PERSONAL-REDISTRIBUTION-1.0"]),
+    attribution: z.string().trim().max(200),
+    sourceUrl: z.union([
+      z.literal(""),
+      z
+        .string()
+        .url()
+        .refine((v) => /^https?:/.test(v)),
+    ]),
+    platforms: z
+      .array(z.enum(["macos", "windows"]))
+      .min(1)
+      .max(2),
+    appearance: z.enum(["light", "dark"]),
+    mediaType: z.enum(["static", "animated"]),
+    accent: hex,
+    secondary: hex,
+    highlight: hex,
+    focalPoint: z.object({
+      x: z.number().min(0).max(1),
+      y: z.number().min(0).max(1),
+    }),
+    compatibilityTargets: z
+      .array(z.enum([MACOS_TARGET, WINDOWS_TARGET]))
+      .min(1)
+      .max(2),
+    rightsDeclared: z.literal(true),
+  })
+  .superRefine((v, ctx) => {
+    if (
+      v.mediaType === "animated" &&
+      (v.platforms.length !== 1 || v.platforms[0] !== "windows")
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["platforms"],
+        message: "animated_requires_windows_only",
+      });
+    if (v.license === "CC-BY-4.0" && !v.attribution)
+      ctx.addIssue({
+        code: "custom",
+        path: ["attribution"],
+        message: "attribution_required",
+      });
+  });
 ```
 
 `createDraft` uses one D1 batch to insert `themes` as `draft/clean/processing`, version 1 as `awaiting_upload`, and the approved source-locale translation. Reject restricted users and duplicate slugs.
@@ -235,11 +349,25 @@ export const creatorInputSchema = z.object({
 
 ```ts
 const key = `quarantine/${themeId}/versions/${version}/${crypto.randomUUID()}`;
-const url = new URL(`https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/codex-skin-store-sources/${key.split("/").map(encodeURIComponent).join("/")}`);
+const url = new URL(
+  `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/codex-skin-store-sources/${key.split("/").map(encodeURIComponent).join("/")}`,
+);
 url.searchParams.set("X-Amz-Expires", "600");
-const headers = new Headers({ "content-type": contentType, "x-amz-meta-upload-id": uploadId, "x-amz-meta-expected-bytes": String(bytes) });
-const signed = await new AwsClient({ accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, service: "s3", region: "auto" })
-  .sign(url, { method: "PUT", headers, aws: { signQuery: true, allHeaders: true } });
+const headers = new Headers({
+  "content-type": contentType,
+  "x-amz-meta-upload-id": uploadId,
+  "x-amz-meta-expected-bytes": String(bytes),
+});
+const signed = await new AwsClient({
+  accessKeyId: env.R2_ACCESS_KEY_ID,
+  secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+  service: "s3",
+  region: "auto",
+}).sign(url, {
+  method: "PUT",
+  headers,
+  aws: { signQuery: true, allHeaders: true },
+});
 ```
 
 Completion joins upload/theme/version by authenticated owner, requires `issued`, unexpired, draft, and `awaiting_upload`, then checks R2 HEAD key, exact size, max size, ETag, `upload-id`, and `expected-bytes`. On mismatch, mark rejected and delete quarantine. On success use `INSERT ... ON CONFLICT(idempotency_key) DO NOTHING` for `package:{themeId}:{version}`, set version `queued`, then send only when the insert changed one row.
@@ -247,8 +375,17 @@ Completion joins upload/theme/version by authenticated owner, requires `issued`,
 - [ ] **Step 5: Add same-origin routes and direct browser PUT**
 
 ```ts
-const presign = await postJson("/api/uploads/presign", { themeId, version, contentType: file.type, bytes: file.size });
-const upload = await fetch(presign.url, { method: "PUT", headers: presign.headers, body: file });
+const presign = await postJson("/api/uploads/presign", {
+  themeId,
+  version,
+  contentType: file.type,
+  bytes: file.size,
+});
+const upload = await fetch(presign.url, {
+  method: "PUT",
+  headers: presign.headers,
+  body: file,
+});
 if (!upload.ok) throw new Error("direct_upload_failed");
 await postJson("/api/uploads/complete", { uploadId: presign.uploadId });
 ```
@@ -268,6 +405,7 @@ git commit -m "feat: add draft-bound direct uploads"
 ### Task 3: Safe Media Validation and Static Processing
 
 **Files:**
+
 - Create: `app/domain/assets/media-types.ts`, `app/domain/assets/media-policy.ts`
 - Create: `app/platform/cloudflare/images.server.ts`, `app/platform/cloudflare/photon.server.ts`
 - Create: `tests/helpers/media.ts`
@@ -277,11 +415,26 @@ git commit -m "feat: add draft-bound direct uploads"
 
 ```ts
 it.each([
-  [png(1920,1080), "image/png"], [jpeg(1920,1080), "image/jpeg"], [webp(1920,1080), "image/webp"],
-])("accepts a valid static container", (bytes, mime) => expect(inspectMedia(bytes, bytes.length)).toMatchObject({ mime, width:1920, height:1080 }));
+  [png(1920, 1080), "image/png"],
+  [jpeg(1920, 1080), "image/jpeg"],
+  [webp(1920, 1080), "image/webp"],
+])("accepts a valid static container", (bytes, mime) =>
+  expect(inspectMedia(bytes, bytes.length)).toMatchObject({
+    mime,
+    width: 1920,
+    height: 1080,
+  }),
+);
 it.each([
-  [svgBytes, "unsupported_signature"], [zipBytes, "unsupported_signature"], [png(8192,8192), "decoded_pixel_limit"], [pngWithTrailingHtml, "container_trailing_bytes"],
-])("rejects hostile bytes", (bytes, code) => expect(() => inspectMedia(bytes, bytes.length)).toThrowError(expect.objectContaining({ code })));
+  [svgBytes, "unsupported_signature"],
+  [zipBytes, "unsupported_signature"],
+  [png(8192, 8192), "decoded_pixel_limit"],
+  [pngWithTrailingHtml, "container_trailing_bytes"],
+])("rejects hostile bytes", (bytes, code) =>
+  expect(() => inspectMedia(bytes, bytes.length)).toThrowError(
+    expect.objectContaining({ code }),
+  ),
+);
 ```
 
 - [ ] **Step 2: Verify failure**
@@ -292,19 +445,32 @@ Expected: FAIL with missing `inspectMedia`.
 - [ ] **Step 3: Implement magic/container/dimension policy**
 
 ```ts
-export function inspectMedia(bytes: Uint8Array, objectBytes: number): MediaInspection {
+export function inspectMedia(
+  bytes: Uint8Array,
+  objectBytes: number,
+): MediaInspection {
   if (objectBytes < 1) throw new MediaError("source_empty");
   if (objectBytes > 25_000_000) throw new MediaError("source_too_large");
   const kind = detectExactMagic(bytes); // PNG 8-byte, JPEG FFD8FF, RIFF/WEBP, GIF87a/GIF89a
   if (!kind) throw new MediaError("unsupported_signature");
   const terminalOffset = walkContainer(bytes, kind); // IEND, EOI, RIFF length, GIF trailer
-  if (terminalOffset !== objectBytes) throw new MediaError("container_trailing_bytes");
+  if (terminalOffset !== objectBytes)
+    throw new MediaError("container_trailing_bytes");
   const { width, height } = imageSize(bytes);
-  if (!width || !height || width > 8192 || height > 8192) throw new MediaError("dimension_limit");
+  if (!width || !height || width > 8192 || height > 8192)
+    throw new MediaError("dimension_limit");
   if (width * height > 16_777_216) throw new MediaError("decoded_pixel_limit");
   const frames = kind === "gif" ? countGifFrames(bytes) : 1;
-  if (frames > 300 || width * height * frames > 50_331_648) throw new MediaError("gif_frame_limit");
-  return { mime: mimeFor(kind), extension: extensionFor(kind), width, height, frames, mediaType: frames > 1 ? "animated" : "static" };
+  if (frames > 300 || width * height * frames > 50_331_648)
+    throw new MediaError("gif_frame_limit");
+  return {
+    mime: mimeFor(kind),
+    extension: extensionFor(kind),
+    width,
+    height,
+    frames,
+    mediaType: frames > 1 ? "animated" : "static",
+  };
 }
 ```
 
@@ -314,10 +480,25 @@ export function inspectMedia(bytes: Uint8Array, objectBytes: number): MediaInspe
 
 ```ts
 const info = await env.IMAGES.info(new Response(prepared).body!);
-if (info.format === "image/svg+xml" || info.format !== expectedMime || info.width !== width || info.height !== height) throw new MediaError("decode_failed");
-for (const quality of [82,74,66,58,50]) {
-  const output = await env.IMAGES.input(new Response(prepared).body!).transform({ width:1600, height:1000, fit:"cover", gravity:{ x:focal.x, y:focal.y, mode:"box-center" } }).output({ format:"image/jpeg", quality, anim:false });
-  const preview = new Uint8Array(await new Response(output.image()).arrayBuffer());
+if (
+  info.format === "image/svg+xml" ||
+  info.format !== expectedMime ||
+  info.width !== width ||
+  info.height !== height
+)
+  throw new MediaError("decode_failed");
+for (const quality of [82, 74, 66, 58, 50]) {
+  const output = await env.IMAGES.input(new Response(prepared).body!)
+    .transform({
+      width: 1600,
+      height: 1000,
+      fit: "cover",
+      gravity: { x: focal.x, y: focal.y, mode: "box-center" },
+    })
+    .output({ format: "image/jpeg", quality, anim: false });
+  const preview = new Uint8Array(
+    await new Response(output.image()).arrayBuffer(),
+  );
   if (preview.length <= 250_000) return { prepared, preview };
 }
 throw new MediaError("preview_too_large");
@@ -338,6 +519,7 @@ git commit -m "feat: validate and prepare static media"
 ### Task 4: Queue Leasing, Idempotency, Retry, and Sweeper
 
 **Files:**
+
 - Create: `app/services/package-jobs.server.ts`
 - Modify: `workers/app.ts`
 - Test: `tests/integration/package-jobs.test.ts`
@@ -347,11 +529,14 @@ git commit -m "feat: validate and prepare static media"
 ```ts
 it("leases one job, ignores a duplicate delivery, and sweeps expiry", async () => {
   const first = await leaseJob(db, "job-1", "worker-a", now);
-  expect(first).toMatchObject({ state:"leased", attempt:1 });
+  expect(first).toMatchObject({ state: "leased", attempt: 1 });
   expect(await leaseJob(db, "job-1", "worker-b", now)).toBeNull();
-  await sweepExpiredJobs(deps, new Date(now.getTime()+301_000));
-  expect(await jobState(db,"job-1")).toBe("queued");
-  expect(deps.queue.send).toHaveBeenCalledWith({ jobId:"job-1", idempotencyKey:"package:t1:1" });
+  await sweepExpiredJobs(deps, new Date(now.getTime() + 301_000));
+  expect(await jobState(db, "job-1")).toBe("queued");
+  expect(deps.queue.send).toHaveBeenCalledWith({
+    jobId: "job-1",
+    idempotencyKey: "package:t1:1",
+  });
 });
 ```
 
@@ -363,10 +548,24 @@ Expected: FAIL with missing job service.
 - [ ] **Step 3: Implement conditional five-minute leases**
 
 ```ts
-export async function leaseJob(db:D1Database, jobId:string, owner:string, now=new Date()) {
-  const result = await db.prepare("UPDATE package_jobs SET state='leased',attempt=attempt+1,lease_owner=?,lease_expires_at=?,updated_at=? WHERE id=? AND state='queued' AND available_at<=? AND attempt<max_attempts")
-    .bind(owner,now.getTime()+300_000,now.getTime(),jobId,now.getTime()).run();
-  return result.meta.changes === 1 ? db.prepare("SELECT * FROM package_jobs WHERE id=?").bind(jobId).first<JobRow>() : null;
+export async function leaseJob(
+  db: D1Database,
+  jobId: string,
+  owner: string,
+  now = new Date(),
+) {
+  const result = await db
+    .prepare(
+      "UPDATE package_jobs SET state='leased',attempt=attempt+1,lease_owner=?,lease_expires_at=?,updated_at=? WHERE id=? AND state='queued' AND available_at<=? AND attempt<max_attempts",
+    )
+    .bind(owner, now.getTime() + 300_000, now.getTime(), jobId, now.getTime())
+    .run();
+  return result.meta.changes === 1
+    ? db
+        .prepare("SELECT * FROM package_jobs WHERE id=?")
+        .bind(jobId)
+        .first<JobRow>()
+    : null;
 }
 ```
 
@@ -400,6 +599,7 @@ git commit -m "feat: lease and recover package jobs"
 ### Task 5: Neutral Manifest v1, Runtime Adapters, and Fixed Install Text
 
 **Files:**
+
 - Create: `app/domain/themes/compatibility.ts`, `app/domain/themes/manifest-v1.ts`
 - Create: `app/domain/themes/adapters/macos-v1.ts`, `app/domain/themes/adapters/windows-v1.ts`
 - Create: `app/domain/themes/install-prompt-v1.ts`
@@ -408,11 +608,19 @@ git commit -m "feat: lease and recover package jobs"
 - [ ] **Step 1: Write failing contract snapshots**
 
 ```ts
-expect(buildManifest(fixture)).toMatchObject({ schemaVersion:1, id:"theme-1", slug:"neon-road", version:1, platforms:["macos","windows"] });
+expect(buildManifest(fixture)).toMatchObject({
+  schemaVersion: 1,
+  id: "theme-1",
+  slug: "neon-road",
+  version: 1,
+  platforms: ["macos", "windows"],
+});
 expect(buildMacosAdapter(fixture)).toHaveProperty("colors.panelAlt");
 expect(buildWindowsAdapter(fixture)).toHaveProperty("layout.previewPosition");
 expect(buildMacosAdapter(fixture)).not.toHaveProperty("layout");
-expect(renderInstallPrompt(fixture)).toContain("Do not modify app.asar, WindowsApps, application signatures, API keys, Base URLs, or model providers.");
+expect(renderInstallPrompt(fixture)).toContain(
+  "Do not modify app.asar, WindowsApps, application signatures, API keys, Base URLs, or model providers.",
+);
 ```
 
 - [ ] **Step 2: Verify failure**
@@ -424,14 +632,33 @@ Expected: FAIL with missing builders.
 
 ```ts
 export const manifestV1Schema = z.object({
-  schemaVersion:z.literal(1), id:z.string().regex(/^[a-z0-9][a-z0-9-]{2,79}$/), slug:z.string(), version:z.number().int().positive(),
-  localized:z.object({ sourceLocale:z.enum(["en","zh-hans"]), name:z.string(), description:z.string() }),
-  creator:z.object({ id:z.string(), handle:z.string() }),
-  license:z.object({ id:z.enum(["CC0-1.0","CC-BY-4.0","PERSONAL-REDISTRIBUTION-1.0"]), attribution:z.string(), sourceUrl:z.string() }),
-  platforms:z.array(z.enum(["macos","windows"])), compatibilityTargets:z.array(z.enum([MACOS_TARGET,WINDOWS_TARGET])),
-  appearance:z.enum(["light","dark"]), mediaType:z.enum(["static","animated"]),
-  colors:z.object({ accent:z.string(), secondary:z.string(), highlight:z.string() }), focalPoint:z.object({x:z.number(),y:z.number()}),
-  assets:z.object({ background:assetSchema, preview:assetSchema }), generatedAt:z.string().datetime(),
+  schemaVersion: z.literal(1),
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{2,79}$/),
+  slug: z.string(),
+  version: z.number().int().positive(),
+  localized: z.object({
+    sourceLocale: z.enum(["en", "zh-hans"]),
+    name: z.string(),
+    description: z.string(),
+  }),
+  creator: z.object({ id: z.string(), handle: z.string() }),
+  license: z.object({
+    id: z.enum(["CC0-1.0", "CC-BY-4.0", "PERSONAL-REDISTRIBUTION-1.0"]),
+    attribution: z.string(),
+    sourceUrl: z.string(),
+  }),
+  platforms: z.array(z.enum(["macos", "windows"])),
+  compatibilityTargets: z.array(z.enum([MACOS_TARGET, WINDOWS_TARGET])),
+  appearance: z.enum(["light", "dark"]),
+  mediaType: z.enum(["static", "animated"]),
+  colors: z.object({
+    accent: z.string(),
+    secondary: z.string(),
+    highlight: z.string(),
+  }),
+  focalPoint: z.object({ x: z.number(), y: z.number() }),
+  assets: z.object({ background: assetSchema, preview: assetSchema }),
+  generatedAt: z.string().datetime(),
 });
 ```
 
@@ -440,8 +667,83 @@ export const manifestV1Schema = z.object({
 - [ ] **Step 4: Implement distinct pinned adapters**
 
 ```ts
-export function buildMacosAdapter(v:AdapterInput){return {schemaVersion:1,id:v.slug,name:v.name,brandSubtitle:v.name.toUpperCase(),tagline:v.description,projectPrefix:"Select project · ",projectLabel:"Select project",statusText:"THEME ONLINE",quote:v.name,image:v.backgroundFilename,colors:{background:v.canvas,panel:v.surface,panelAlt:v.surfaceAlt,accent:v.accent,accentAlt:v.highlight,secondary:v.secondary,highlight:v.accentStrong,text:v.text,muted:v.muted,line:v.line}};}
-export function buildWindowsAdapter(v:AdapterInput){return {schemaVersion:1,id:v.slug,name:v.name,description:v.description,image:v.backgroundFilename,preview:"preview.jpg",mode:v.appearance,order:0,brand:v.name.toUpperCase(),palette:{accent:v.accent,accentStrong:v.accentStrong,accentSoft:v.accentSoft,accentFaint:v.accentFaint,accentRgb:v.accentRgb,highlight:v.highlight,secondary:v.secondary,ink:v.text,inkRgb:v.textRgb,muted:v.muted,canvas:v.canvas,sidebar:v.sidebar,surface:v.surface,surfaceSolid:v.surfaceSolid,elevated:v.elevated,control:v.control,mainSurface:v.mainSurface,line:v.line,heavyLine:v.heavyLine,grid:v.grid,shadowRgb:"0, 0, 0",codeBackground:v.codeBackground,buttonText:v.buttonText},layout:{copyAlign:"left",copyWidth:"46%",heroPosition:v.backgroundPosition,pagePosition:v.backgroundPosition,previewPosition:v.backgroundPosition,bodyBackground:v.canvas,heroOverlay:v.heroOverlay,pageOverlay:v.pageOverlay,homeOverlay:v.homeOverlay,titleColor:v.text,titleShadow:v.titleShadow}};}
+export function buildMacosAdapter(v: AdapterInput) {
+  return {
+    schemaVersion: 1,
+    id: v.slug,
+    name: v.name,
+    brandSubtitle: v.name.toUpperCase(),
+    tagline: v.description,
+    projectPrefix: "Select project · ",
+    projectLabel: "Select project",
+    statusText: "THEME ONLINE",
+    quote: v.name,
+    image: v.backgroundFilename,
+    colors: {
+      background: v.canvas,
+      panel: v.surface,
+      panelAlt: v.surfaceAlt,
+      accent: v.accent,
+      accentAlt: v.highlight,
+      secondary: v.secondary,
+      highlight: v.accentStrong,
+      text: v.text,
+      muted: v.muted,
+      line: v.line,
+    },
+  };
+}
+export function buildWindowsAdapter(v: AdapterInput) {
+  return {
+    schemaVersion: 1,
+    id: v.slug,
+    name: v.name,
+    description: v.description,
+    image: v.backgroundFilename,
+    preview: "preview.jpg",
+    mode: v.appearance,
+    order: 0,
+    brand: v.name.toUpperCase(),
+    palette: {
+      accent: v.accent,
+      accentStrong: v.accentStrong,
+      accentSoft: v.accentSoft,
+      accentFaint: v.accentFaint,
+      accentRgb: v.accentRgb,
+      highlight: v.highlight,
+      secondary: v.secondary,
+      ink: v.text,
+      inkRgb: v.textRgb,
+      muted: v.muted,
+      canvas: v.canvas,
+      sidebar: v.sidebar,
+      surface: v.surface,
+      surfaceSolid: v.surfaceSolid,
+      elevated: v.elevated,
+      control: v.control,
+      mainSurface: v.mainSurface,
+      line: v.line,
+      heavyLine: v.heavyLine,
+      grid: v.grid,
+      shadowRgb: "0, 0, 0",
+      codeBackground: v.codeBackground,
+      buttonText: v.buttonText,
+    },
+    layout: {
+      copyAlign: "left",
+      copyWidth: "46%",
+      heroPosition: v.backgroundPosition,
+      pagePosition: v.backgroundPosition,
+      previewPosition: v.backgroundPosition,
+      bodyBackground: v.canvas,
+      heroOverlay: v.heroOverlay,
+      pageOverlay: v.pageOverlay,
+      homeOverlay: v.homeOverlay,
+      titleColor: v.text,
+      titleShadow: v.titleShadow,
+    },
+  };
+}
 ```
 
 Validate macOS against pinned original/Forge macOS rules and Windows against the pinned Forge validator. Never copy one shape to the other. Emit only selected platforms; GIF can never emit macOS.
@@ -463,6 +765,7 @@ git commit -m "feat: generate neutral and runtime manifests"
 ### Task 6: Canonical Digests, Store-Only ZIP, and Compatibility Spike
 
 **Files:**
+
 - Create: `app/domain/themes/package-inventory.ts`
 - Create: `app/platform/cloudflare/zip-client.server.ts`, `app/platform/cloudflare/zip-fflate.server.ts`, `app/platform/cloudflare/zip.server.ts`
 - Create: `workers/spikes/pipeline.ts`, `wrangler.spike.jsonc`, `scripts/run-staging-spike.ts`
@@ -474,11 +777,11 @@ git commit -m "feat: generate neutral and runtime manifests"
 ```ts
 it("excludes prompt from payload digest and stores every entry", async () => {
   const inventory = await canonicalInventory(entries);
-  expect(inventory.map(x=>x.path)).not.toContain("install-prompt.md");
+  expect(inventory.map((x) => x.path)).not.toContain("install-prompt.md");
   const bytes = await streamBytes(writer.stream(entries));
   const zip = await openZip(bytes);
-  expect(zip.entries.every(e=>e.compressionMethod===0)).toBe(true);
-  expect(zip.entries.map(e=>e.name)).toEqual(expectedPaths.sort());
+  expect(zip.entries.every((e) => e.compressionMethod === 0)).toBe(true);
+  expect(zip.entries.map((e) => e.name)).toEqual(expectedPaths.sort());
   expect(sha256(bytes)).not.toBe(payloadDigest(inventory));
 });
 ```
@@ -491,12 +794,25 @@ Expected: FAIL with missing inventory/writers.
 - [ ] **Step 3: Implement canonical payload digest**
 
 ```ts
-export async function canonicalInventory(entries:Artifact[]) {
-  return Promise.all(entries.filter(e=>e.path!=="install-prompt.md").sort((a,b)=>a.path.localeCompare(b.path)).map(async e=>({path:e.path,size:e.size,sha256:await sha256(e.bytes)})));
+export async function canonicalInventory(entries: Artifact[]) {
+  return Promise.all(
+    entries
+      .filter((e) => e.path !== "install-prompt.md")
+      .sort((a, b) => a.path.localeCompare(b.path))
+      .map(async (e) => ({
+        path: e.path,
+        size: e.size,
+        sha256: await sha256(e.bytes),
+      })),
+  );
 }
-export async function payloadDigest(entries:Artifact[]) {
-  const inventory=await canonicalInventory(entries);
-  return sha256(new TextEncoder().encode(inventory.map(e=>`${e.path}\t${e.size}\t${e.sha256}\n`).join("")));
+export async function payloadDigest(entries: Artifact[]) {
+  const inventory = await canonicalInventory(entries);
+  return sha256(
+    new TextEncoder().encode(
+      inventory.map((e) => `${e.path}\t${e.size}\t${e.sha256}\n`).join(""),
+    ),
+  );
 }
 ```
 
@@ -505,8 +821,37 @@ Build inventory before the prompt, render prompt with that digest, then ZIP all 
 - [ ] **Step 4: Implement two Store-only writers**
 
 ```ts
-export const clientZipWriter:StoreZipWriter={implementation:"client-zip",stream:entries=>makeZip((async function*(){for await(const e of entries)yield{name:e.name,size:e.size,lastModified:e.lastModified,input:toStream(e.body)};})())};
-export const fflateWriter:StoreZipWriter={implementation:"fflate",stream:entries=>new ReadableStream({start(controller){const zip=new Zip((error,chunk,final)=>{if(error)controller.error(error);else{controller.enqueue(chunk);if(final)controller.close();}});void pumpStoreEntries(zip,entries);}})};
+export const clientZipWriter: StoreZipWriter = {
+  implementation: "client-zip",
+  stream: (entries) =>
+    makeZip(
+      (async function* () {
+        for await (const e of entries)
+          yield {
+            name: e.name,
+            size: e.size,
+            lastModified: e.lastModified,
+            input: toStream(e.body),
+          };
+      })(),
+    ),
+};
+export const fflateWriter: StoreZipWriter = {
+  implementation: "fflate",
+  stream: (entries) =>
+    new ReadableStream({
+      start(controller) {
+        const zip = new Zip((error, chunk, final) => {
+          if (error) controller.error(error);
+          else {
+            controller.enqueue(chunk);
+            if (final) controller.close();
+          }
+        });
+        void pumpStoreEntries(zip, entries);
+      },
+    }),
+};
 ```
 
 `pumpStoreEntries` creates `ZipPassThrough` per entry, sets one UTC timestamp, reads with backpressure, pushes chunks, and calls `zip.end()`. Reject backslashes, absolute paths, `..`, duplicate names, and entries outside the approved layout.
@@ -516,6 +861,7 @@ export const fflateWriter:StoreZipWriter={implementation:"fflate",stream:entries
 The isolated spike generates a static archive with each writer, transforms an animated GIF with `anim:false` for preview while preserving original GIF background, and returns hashes/archives. The workflow extracts both archives on `macos-15` and `windows-2025`, runs `scripts/check-package.ts`, and compares exact paths/bytes/timestamps.
 
 Run after approval:
+
 ```bash
 npx wrangler deploy --config wrangler.spike.jsonc --env staging
 gh workflow run pipeline-spike.yml -f spike_url=https://codex-skin-store-pipeline-spike-staging.workers.dev
@@ -524,6 +870,7 @@ gh workflow run pipeline-spike.yml -f spike_url=https://codex-skin-store-pipelin
 Expected gate: both OS jobs PASS; client-zip archive is byte-stable and valid; GIF metadata, still preview, original animation bytes, and Forge validator all PASS.
 
 Decision is mechanical:
+
 - Full pass: set staging/production `ZIP_WRITER=client-zip`, `ENABLE_GIF_UPLOADS=true`, and enable GIF in upload `accept` only when Windows is selected.
 - Any client-zip failure: keep `ZIP_WRITER=fflate`; static support proceeds.
 - Any GIF failure: keep `ENABLE_GIF_UPLOADS=false`; PNG/JPEG/WebP support proceeds.
@@ -541,6 +888,7 @@ git commit -m "feat: stream deterministic store-only packages"
 ### Task 7: Idempotent Package Builder and R2 Promotion
 
 **Files:**
+
 - Create: `app/platform/cloudflare/r2-packages.server.ts`
 - Create: `app/services/package-builder.server.ts`
 - Create: `scripts/check-package.ts`
@@ -549,11 +897,22 @@ git commit -m "feat: stream deterministic store-only packages"
 - [ ] **Step 1: Write the failing static end-to-end package test**
 
 ```ts
-it.each(["png","jpg","webp"])("builds a verified %s package", async extension => {
-  const result = await buildPackageVersion(deps, fixtureVersion(extension));
-  expect(result).toMatchObject({ generationState:"ready", packageKey:"themes/theme-1/versions/1/generated/theme.zip" });
-  await expect(checkStoredPackage(deps.packages,result.packageKey)).resolves.toMatchObject({ payloadDigest:result.payloadDigest, archiveDigest:result.archiveDigest });
-});
+it.each(["png", "jpg", "webp"])(
+  "builds a verified %s package",
+  async (extension) => {
+    const result = await buildPackageVersion(deps, fixtureVersion(extension));
+    expect(result).toMatchObject({
+      generationState: "ready",
+      packageKey: "themes/theme-1/versions/1/generated/theme.zip",
+    });
+    await expect(
+      checkStoredPackage(deps.packages, result.packageKey),
+    ).resolves.toMatchObject({
+      payloadDigest: result.payloadDigest,
+      archiveDigest: result.archiveDigest,
+    });
+  },
+);
 ```
 
 - [ ] **Step 2: Verify failure**
@@ -566,9 +925,22 @@ Expected: FAIL with missing package builder.
 For version base `themes/{id}/versions/{version}`, source final key is `source/background.{ext}` in `SOURCES`; generated keys in `PACKAGES` are `preview.jpg`, `manifest.json`, selected `adapters/{platform}/theme.json`, `install-prompt.md`, `INSTALL.md`, and `theme.zip`.
 
 ```ts
-await bucket.put(key, body, { httpMetadata:{contentType,contentDisposition:"attachment",cacheControl:"private, no-store"}, customMetadata:{sha256}, sha256 });
-const verified=await bucket.head(key);
-if(!verified||verified.size!==size||verified.customMetadata.sha256!==sha256)throw new PackageError("artifact_verification_failed",true);
+await bucket.put(key, body, {
+  httpMetadata: {
+    contentType,
+    contentDisposition: "attachment",
+    cacheControl: "private, no-store",
+  },
+  customMetadata: { sha256 },
+  sha256,
+});
+const verified = await bucket.head(key);
+if (
+  !verified ||
+  verified.size !== size ||
+  verified.customMetadata.sha256 !== sha256
+)
+  throw new PackageError("artifact_verification_failed", true);
 ```
 
 ZIP writes to `staging/zips/{jobId}.zip`, computes archive digest, HEAD-verifies, then copies to final immutable key with `archive-digest` and `payload-digest` metadata and deletes staging. A retry first verifies existing artifacts and skips exact matches; any mismatch is a permanent collision error.
@@ -576,18 +948,36 @@ ZIP writes to `staging/zips/{jobId}.zip`, computes archive digest, HEAD-verifies
 - [ ] **Step 4: Orchestrate the complete builder**
 
 ```ts
-export async function buildPackageVersion(deps:BuilderDeps, job:LeasedJob) {
-  const row=await loadOwnedVersion(deps.db,job.themeId,job.version);
-  if(row.generation_state==="ready")return verifyReadyArtifacts(deps,row);
-  const bytes=await readBoundedSource(deps.sources,row.quarantine_key,25_000_000);
-  const inspected=inspectMedia(bytes,bytes.length);
-  enforceDeclaredMedia(inspected,JSON.parse(row.creator_input_json),deps.enableGif);
-  const media=inspected.mediaType==="static"?await prepareStaticMedia(deps,bytes,inspected):await prepareGifMedia(deps,bytes,inspected);
-  const sourceSha=await sha256(media.background.bytes), generatedAt=new Date(row.created_at).toISOString();
-  await deps.sources.moveQuarantineToSource({quarantineKey:row.quarantine_key,sourceKey:sourceKey(row,media.background.extension),sha256:sourceSha,contentType:media.background.mime});
-  const artifacts=await renderArtifacts(row,media,generatedAt);
-  const digest=await payloadDigest(artifacts); artifacts.push(renderPromptArtifact(row,artifacts,digest));
-  return writeVerifyZipAndMarkReady(deps,row,artifacts,digest,generatedAt);
+export async function buildPackageVersion(deps: BuilderDeps, job: LeasedJob) {
+  const row = await loadOwnedVersion(deps.db, job.themeId, job.version);
+  if (row.generation_state === "ready") return verifyReadyArtifacts(deps, row);
+  const bytes = await readBoundedSource(
+    deps.sources,
+    row.quarantine_key,
+    25_000_000,
+  );
+  const inspected = inspectMedia(bytes, bytes.length);
+  enforceDeclaredMedia(
+    inspected,
+    JSON.parse(row.creator_input_json),
+    deps.enableGif,
+  );
+  const media =
+    inspected.mediaType === "static"
+      ? await prepareStaticMedia(deps, bytes, inspected)
+      : await prepareGifMedia(deps, bytes, inspected);
+  const sourceSha = await sha256(media.background.bytes),
+    generatedAt = new Date(row.created_at).toISOString();
+  await deps.sources.moveQuarantineToSource({
+    quarantineKey: row.quarantine_key,
+    sourceKey: sourceKey(row, media.background.extension),
+    sha256: sourceSha,
+    contentType: media.background.mime,
+  });
+  const artifacts = await renderArtifacts(row, media, generatedAt);
+  const digest = await payloadDigest(artifacts);
+  artifacts.push(renderPromptArtifact(row, artifacts, digest));
+  return writeVerifyZipAndMarkReady(deps, row, artifacts, digest, generatedAt);
 }
 ```
 
@@ -608,6 +998,7 @@ git commit -m "feat: build and verify theme packages"
 ### Task 8: Version, Preview, Atomic Publish, and Unlist Lifecycle
 
 **Files:**
+
 - Modify: `app/services/creator-themes.server.ts`
 - Create: `app/routes/themes.$slug.edit.tsx`
 - Create: `app/routes/api.creator-artifacts.$themeId.$version.$artifact.ts`
@@ -618,12 +1009,28 @@ git commit -m "feat: build and verify theme packages"
 
 ```ts
 it("versions, publishes ready current version, and unlists without deleting history", async () => {
-  await expect(publishTheme(deps,{userId:"u1",themeId:"t1",version:1})).rejects.toMatchObject({code:"version_not_ready"});
-  await markFixtureReady(db,"t1",1); await publishTheme(deps,{userId:"u1",themeId:"t1",version:1});
-  expect(await state(db,"t1")).toMatchObject({visibility:"public",package_status:"ready",current_version:1});
-  const v2=await createVersion(deps,{userId:"u1",themeId:"t1",input:changedMetadata});
-  expect(v2.version).toBe(2); expect(await state(db,"t1")).toMatchObject({visibility:"public",current_version:1});
-  await unlistTheme(deps,{userId:"u1",themeId:"t1"}); expect((await state(db,"t1")).visibility).toBe("unlisted");
+  await expect(
+    publishTheme(deps, { userId: "u1", themeId: "t1", version: 1 }),
+  ).rejects.toMatchObject({ code: "version_not_ready" });
+  await markFixtureReady(db, "t1", 1);
+  await publishTheme(deps, { userId: "u1", themeId: "t1", version: 1 });
+  expect(await state(db, "t1")).toMatchObject({
+    visibility: "public",
+    package_status: "ready",
+    current_version: 1,
+  });
+  const v2 = await createVersion(deps, {
+    userId: "u1",
+    themeId: "t1",
+    input: changedMetadata,
+  });
+  expect(v2.version).toBe(2);
+  expect(await state(db, "t1")).toMatchObject({
+    visibility: "public",
+    current_version: 1,
+  });
+  await unlistTheme(deps, { userId: "u1", themeId: "t1" });
+  expect((await state(db, "t1")).visibility).toBe("unlisted");
 });
 ```
 
@@ -667,6 +1074,7 @@ git commit -m "feat: publish and version creator themes"
 ### Task 9: Staging Resources and Milestone Verification
 
 **Files:**
+
 - Modify: `app/routes/upload.tsx`, `workers/app.ts`, `wrangler.json`
 - Create: `tests/e2e/creator-pipeline.spec.ts`
 - Modify: deployment environment configuration outside Git via Wrangler secrets/vars
@@ -674,14 +1082,25 @@ git commit -m "feat: publish and version creator themes"
 - [ ] **Step 1: Write the failing creator browser test**
 
 ```ts
-test("creator uploads static theme, waits for processing, publishes, versions, and unlists", async ({page}) => {
-  await signInFixtureUser(page); await page.goto("/en/upload");
-  await fillCreatorForm(page,{platforms:["macos","windows"],file:"tests/fixtures/media/neon-road.png"});
-  await page.getByRole("button",{name:"Create draft"}).click();
-  await expect(page.getByText("Package ready")).toBeVisible({timeout:30_000});
-  await page.getByRole("button",{name:"Publish"}).click(); await expect(page.getByText("Public")).toBeVisible();
-  await page.getByRole("button",{name:"Create new version"}).click(); await expect(page.getByText("Version 2")).toBeVisible();
-  await page.getByRole("button",{name:"Unlist"}).click(); await expect(page.getByText("Unlisted")).toBeVisible();
+test("creator uploads static theme, waits for processing, publishes, versions, and unlists", async ({
+  page,
+}) => {
+  await signInFixtureUser(page);
+  await page.goto("/en/upload");
+  await fillCreatorForm(page, {
+    platforms: ["macos", "windows"],
+    file: "tests/fixtures/media/neon-road.png",
+  });
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByText("Package ready")).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Public")).toBeVisible();
+  await page.getByRole("button", { name: "Create new version" }).click();
+  await expect(page.getByText("Version 2")).toBeVisible();
+  await page.getByRole("button", { name: "Unlist" }).click();
+  await expect(page.getByText("Unlisted")).toBeVisible();
 });
 ```
 
@@ -709,6 +1128,7 @@ Expected: all exit 0 with PNG/JPEG/WebP paths while `ENABLE_GIF_UPLOADS=false` a
 - [ ] **Step 4: Provision approved staging resources and CORS**
 
 After explicit approval, run:
+
 ```bash
 npx wrangler whoami
 npx wrangler queues create codex-skin-store-packages
@@ -736,6 +1156,7 @@ Expected: static cases always pass; Queue produces no duplicate version/artifact
 - [ ] **Step 6: Final verification and commit**
 
 Run:
+
 ```bash
 npm run format:check && npm run lint && npm run typecheck && npm run test && npm run test:packages && npm run build && npm run test:e2e
 ```

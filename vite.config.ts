@@ -6,8 +6,5 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
-    reactRouter(),
-  ],
+  plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), reactRouter()],
 });
