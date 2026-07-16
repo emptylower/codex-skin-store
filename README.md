@@ -29,6 +29,23 @@ Signed-in community flows use Better Auth OAuth. Pre-auth actions create single-
 
 GIF uploads, payments, ratings, and DMs remain out of scope for this MVP.
 
+## Admin / release tooling
+
+| Path / command | Notes |
+| --- | --- |
+| `/:locale/admin/reports` | Moderator console (`noindex`) |
+| `/:locale/admin/theme` | Theme/comment remove/restore |
+| `/:locale/admin/user` | Admin-only upload suspend + roles |
+| `/:locale/admin/seo-landings` | Controlled landing registry |
+| `/:locale/admin/analytics-export` | Admin-only metrics JSON/CSV |
+| `/:locale/copyright/report` | Public copyright claim form |
+| `/:locale/l/:slug` | Programmatic SEO landing (registry only) |
+| `npm run audit:seo-landings` | Hreflang/eligibility audit |
+| `npm run export:metrics` | Fixture metrics dry-run |
+| `npm run release:check` | Local format/lint/typecheck/test/build gates |
+
+Runbooks: `docs/runbooks/{moderation,takedown,seo-rollout,deployment}.md`.
+
 ## Verification
 
 ```bash
@@ -38,9 +55,11 @@ npm run typecheck
 npm run test
 npm run build
 npm run test:e2e
+npm run audit:seo-landings
+npm run release:check -- --skip-e2e
 ```
 
-Playwright projects cover desktop (1440×900), mobile (390×844), and JavaScript-disabled SSR content. Auth-gated e2e flows are skipped until a local auth fixture is wired; prefer `npm run test:workers` for gated delivery/favorites/comments/reports.
+Playwright projects cover desktop (1440×900), mobile (390×844), and JavaScript-disabled SSR content. Auth-gated e2e flows and axe release suites are skipped until a local auth fixture is wired; prefer `npm run test:workers` for gated delivery/favorites/comments/reports/moderation.
 
 Browsers can be installed with:
 
@@ -50,7 +69,7 @@ npx playwright install chromium
 
 ## Remote Cloudflare operations
 
-Remote resource creation, D1 migrations against production, and deployment require **explicit approval** and real Cloudflare account/resource IDs. Placeholder database IDs in `wrangler.json` are for local development only—do not deploy with them.
+Remote resource creation, secrets, D1 migrations against production, Search Console submission, and deployment require **explicit approval** and real Cloudflare account/resource IDs. See `docs/runbooks/deployment.md` and `.dev.vars.example` (names only). Placeholder database IDs in `wrangler.json` are for local development only—do not deploy with them.
 
 ## Security headers
 
