@@ -180,4 +180,3 @@ export function assertNoAggregateRating(nodes: JsonLd | JsonLd[]): void {
     }
   }
 }
-

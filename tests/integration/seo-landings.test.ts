@@ -51,7 +51,11 @@ describe("seo landings registry", () => {
     expect(view?.landing.indexStatus).toBe("candidate");
     expect(view?.indexable).toBe(false);
 
-    const missing = await getLandingBySlug(env.DB, "never-created-by-filter", "en");
+    const missing = await getLandingBySlug(
+      env.DB,
+      "never-created-by-filter",
+      "en",
+    );
     expect(missing).toBeNull();
   });
 
@@ -68,8 +72,8 @@ describe("seo landings registry", () => {
     });
 
     const approved = await listApprovedLandingSlugs(env.DB);
-    expect(approved.some((row) => row.slug === "soft-dark" && row.locale === "en")).toBe(
-      true,
-    );
+    expect(
+      approved.some((row) => row.slug === "soft-dark" && row.locale === "en"),
+    ).toBe(true);
   });
 });

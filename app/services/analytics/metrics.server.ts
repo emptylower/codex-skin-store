@@ -149,7 +149,8 @@ export async function computeReleaseMetrics(
   if ((favUsers?.c ?? 0) < METRICS_MIN_SEGMENT_USERS) {
     suppressed.push("sevenDayFavoriteReturnRate");
   } else if ((favUsers?.c ?? 0) > 0) {
-    sevenDayFavoriteReturnRate = (returnRow?.returned ?? 0) / (favUsers?.c ?? 1);
+    sevenDayFavoriteReturnRate =
+      (returnRow?.returned ?? 0) / (favUsers?.c ?? 1);
   }
 
   const publicReady = await db
@@ -258,7 +259,10 @@ export function metricsToCsv(metrics: ReleaseMetrics): string {
   const rows: Array<[string, string]> = [
     ["period.start", metrics.period.start],
     ["period.end", metrics.period.end],
-    ["deliveries.distinctUsers", String(metrics.deliveries.distinctUsers ?? "")],
+    [
+      "deliveries.distinctUsers",
+      String(metrics.deliveries.distinctUsers ?? ""),
+    ],
     ["deliveries.distinctThemes", String(metrics.deliveries.distinctThemes)],
     ["deliveries.downloadCount", String(metrics.deliveries.downloadCount)],
     ["deliveries.promptCopyCount", String(metrics.deliveries.promptCopyCount)],

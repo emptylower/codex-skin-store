@@ -25,7 +25,11 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
   let actor: Awaited<ReturnType<typeof requireModerator>>;
   try {
-    actor = await requireModerator(request, context.cloudflare.env, "seo.review");
+    actor = await requireModerator(
+      request,
+      context.cloudflare.env,
+      "seo.review",
+    );
   } catch (error) {
     if (error instanceof Response && error.status === 401) {
       throw redirect(localePath(locale, "/auth/sign-in"));

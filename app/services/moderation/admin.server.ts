@@ -495,9 +495,7 @@ export async function suspendUploads(
   const now = input.now ?? Date.now();
 
   const user = await db
-    .prepare(
-      `SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`,
-    )
+    .prepare(`SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`)
     .bind(input.userId)
     .first<UserState>();
   if (!user) throw new AdminError("not_found");
@@ -552,9 +550,7 @@ export async function restoreUploads(
   const now = input.now ?? Date.now();
 
   const user = await db
-    .prepare(
-      `SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`,
-    )
+    .prepare(`SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`)
     .bind(input.userId)
     .first<UserState>();
   if (!user) throw new AdminError("not_found");
@@ -619,9 +615,7 @@ export async function changeUserRole(
   }
 
   const user = await db
-    .prepare(
-      `SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`,
-    )
+    .prepare(`SELECT id, role, upload_status FROM users WHERE id = ? LIMIT 1`)
     .bind(input.userId)
     .first<UserState>();
   if (!user) throw new AdminError("not_found");

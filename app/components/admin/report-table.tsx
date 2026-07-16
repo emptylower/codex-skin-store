@@ -57,7 +57,11 @@ export function ReportTable({ reports, locale, labels }: ReportTableProps) {
                 className="admin-inline-form"
               >
                 <input type="hidden" name="reportId" value={report.id} />
-                <input type="hidden" name="idempotencyKey" value={crypto.randomUUID()} />
+                <input
+                  type="hidden"
+                  name="idempotencyKey"
+                  value={crypto.randomUUID()}
+                />
                 <label>
                   Reason
                   <input name="reason" required minLength={3} />

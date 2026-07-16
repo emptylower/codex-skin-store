@@ -14,10 +14,7 @@ import {
   MAX_SITEMAP_LANDING_URLS,
   renderSitemapXml,
 } from "~/services/seo/sitemap.server";
-import type {
-  LandingSitemapCandidate,
-  SeoRepository,
-} from "~/platform/ports";
+import type { LandingSitemapCandidate, SeoRepository } from "~/platform/ports";
 
 describe("release SEO structured data", () => {
   it("builds CreativeWork, Person, Comment, BreadcrumbList, ItemList without AggregateRating", () => {
@@ -92,9 +89,8 @@ describe("release SEO structured data", () => {
       },
     };
 
-    const xml = await createSeoService(repo).buildSitemapXml(
-      "https://store.test",
-    );
+    const xml =
+      await createSeoService(repo).buildSitemapXml("https://store.test");
     expect(xml).toContain("https://store.test/en/l/approved-one");
     expect(xml).toContain("2023-11-14"); // lastmod from updatedAt, not now
     expect(xml).not.toContain("AggregateRating");

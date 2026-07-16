@@ -39,7 +39,10 @@ function metricsToCsv(metrics: ReleaseMetrics): string {
   const rows: Array<[string, string]> = [
     ["period.start", metrics.period.start],
     ["period.end", metrics.period.end],
-    ["deliveries.distinctUsers", String(metrics.deliveries.distinctUsers ?? "")],
+    [
+      "deliveries.distinctUsers",
+      String(metrics.deliveries.distinctUsers ?? ""),
+    ],
     ["deliveries.distinctThemes", String(metrics.deliveries.distinctThemes)],
     ["deliveries.downloadCount", String(metrics.deliveries.downloadCount)],
     ["deliveries.promptCopyCount", String(metrics.deliveries.promptCopyCount)],

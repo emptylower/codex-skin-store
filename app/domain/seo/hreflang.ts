@@ -1,9 +1,4 @@
-import {
-  defaultLocale,
-  htmlLang,
-  type Locale,
-  locales,
-} from "~/i18n/config";
+import { defaultLocale, htmlLang, type Locale, locales } from "~/i18n/config";
 
 export type TranslationVisibility = "draft" | "reviewed" | "stale" | "missing";
 

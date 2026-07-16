@@ -69,7 +69,8 @@ describe("landing eligibility", () => {
       siblings: [
         {
           id: "sib-1",
-          mainCopy: "soft dark themes for calm coding sessions with muted blues",
+          mainCopy:
+            "soft dark themes for calm coding sessions with muted blues",
         },
         {
           id: "sib-2",

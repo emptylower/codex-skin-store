@@ -71,7 +71,9 @@ for (const gate of gates) {
     detail: ok ? "pass" : `exit ${result.status ?? "signal"}`,
   });
   if (!ok && !gate.optional) {
-    console.error(`\nRELEASE GATE FAILED: ${gate.name} (${results.at(-1)?.detail})`);
+    console.error(
+      `\nRELEASE GATE FAILED: ${gate.name} (${results.at(-1)?.detail})`,
+    );
     // Continue collecting? Fail-fast for actionable named gate.
     break;
   }

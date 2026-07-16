@@ -76,7 +76,9 @@ describe("copyright takedown intake", () => {
         signature: "Owner Example",
         now: NOW + 1000,
       }),
-    ).rejects.toMatchObject({ code: "duplicate" } satisfies Partial<TakedownError>);
+    ).rejects.toMatchObject({
+      code: "duplicate",
+    } satisfies Partial<TakedownError>);
   });
 
   it("accepted claim removes theme; rejected does not restore", async () => {

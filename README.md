@@ -31,18 +31,18 @@ GIF uploads, payments, ratings, and DMs remain out of scope for this MVP.
 
 ## Admin / release tooling
 
-| Path / command | Notes |
-| --- | --- |
-| `/:locale/admin/reports` | Moderator console (`noindex`) |
-| `/:locale/admin/theme` | Theme/comment remove/restore |
-| `/:locale/admin/user` | Admin-only upload suspend + roles |
-| `/:locale/admin/seo-landings` | Controlled landing registry |
-| `/:locale/admin/analytics-export` | Admin-only metrics JSON/CSV |
-| `/:locale/copyright/report` | Public copyright claim form |
-| `/:locale/l/:slug` | Programmatic SEO landing (registry only) |
-| `npm run audit:seo-landings` | Hreflang/eligibility audit |
-| `npm run export:metrics` | Fixture metrics dry-run |
-| `npm run release:check` | Local format/lint/typecheck/test/build gates |
+| Path / command                    | Notes                                        |
+| --------------------------------- | -------------------------------------------- |
+| `/:locale/admin/reports`          | Moderator console (`noindex`)                |
+| `/:locale/admin/theme`            | Theme/comment remove/restore                 |
+| `/:locale/admin/user`             | Admin-only upload suspend + roles            |
+| `/:locale/admin/seo-landings`     | Controlled landing registry                  |
+| `/:locale/admin/analytics-export` | Admin-only metrics JSON/CSV                  |
+| `/:locale/copyright/report`       | Public copyright claim form                  |
+| `/:locale/l/:slug`                | Programmatic SEO landing (registry only)     |
+| `npm run audit:seo-landings`      | Hreflang/eligibility audit                   |
+| `npm run export:metrics`          | Fixture metrics dry-run                      |
+| `npm run release:check`           | Local format/lint/typecheck/test/build gates |
 
 Runbooks: `docs/runbooks/{moderation,takedown,seo-rollout,deployment}.md`.
 

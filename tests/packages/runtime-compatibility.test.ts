@@ -107,7 +107,9 @@ describe("runtime package compatibility (golden rules)", () => {
       assertCaseFoldUnique(paths);
       assertNoExecutables(paths);
 
-      const installPrompt = new TextDecoder().decode(files["install-prompt.md"]);
+      const installPrompt = new TextDecoder().decode(
+        files["install-prompt.md"],
+      );
       expect(installPrompt.toLowerCase()).not.toContain(
         "ignore previous instructions",
       );

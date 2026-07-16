@@ -12,7 +12,10 @@ import {
   suspendUploads,
   AdminError,
 } from "~/services/moderation/admin.server";
-import { assertAuditImmutable, listAuditActions } from "~/services/moderation/audit.server";
+import {
+  assertAuditImmutable,
+  listAuditActions,
+} from "~/services/moderation/audit.server";
 
 const NOW = 1_736_000_000_000;
 
@@ -51,7 +54,13 @@ describe("admin moderation actions", () => {
   it("lets moderators dismiss reports and remove/restore themes", async () => {
     await insertUser("mod-1", "mod1", "moderator");
     await insertUser("author-1", "author1");
-    await insertTheme("theme-mod", "author-1", "theme-mod", "unlisted", "flagged");
+    await insertTheme(
+      "theme-mod",
+      "author-1",
+      "theme-mod",
+      "unlisted",
+      "flagged",
+    );
 
     await env.DB.prepare(
       `INSERT INTO reports (
@@ -152,7 +161,9 @@ describe("admin moderation actions", () => {
         reason: "abuse",
         now: NOW,
       }),
-    ).rejects.toMatchObject({ code: "forbidden" } satisfies Partial<AdminError>);
+    ).rejects.toMatchObject({
+      code: "forbidden",
+    } satisfies Partial<AdminError>);
 
     await suspendUploads(env.DB, {
       actorId: "admin-1",

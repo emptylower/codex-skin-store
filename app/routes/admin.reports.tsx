@@ -166,10 +166,7 @@ export default function AdminReports({ loaderData }: Route.ComponentProps) {
         <button type="submit">Filter</button>
       </form>
 
-      <ReportTable
-        reports={reports as never}
-        locale={locale}
-      />
+      <ReportTable reports={reports as never} locale={locale} />
 
       <section>
         <h2>Recent audit</h2>

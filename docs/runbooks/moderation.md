@@ -2,11 +2,11 @@
 
 ## Roles
 
-| Role | Capabilities |
-| --- | --- |
-| user | Report content |
+| Role      | Capabilities                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| user      | Report content                                                                                     |
 | moderator | List/resolve reports; remove/restore themes & comments; review SEO landings; view copyright claims |
-| admin | All moderator actions + suspend/restore uploads + change roles + export analytics |
+| admin     | All moderator actions + suspend/restore uploads + change roles + export analytics                  |
 
 Authorization is enforced in `app/domain/moderation/policy.ts` and re-checked against a fresh DB role in admin services.
 

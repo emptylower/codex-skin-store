@@ -1,4 +1,10 @@
-import { integer, real, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  real,
+  sqliteTable,
+  text,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 export const SEO_INDEX_STATUSES = [
   "candidate",

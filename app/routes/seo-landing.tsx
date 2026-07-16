@@ -1,4 +1,5 @@
 import { Breadcrumbs } from "~/components/breadcrumbs";
+import { isModeratorOrAdmin } from "~/domain/moderation/policy";
 import {
   htmlLang,
   localePath,
@@ -7,21 +8,18 @@ import {
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getOptionalUser } from "~/services/identity.server";
-import { isModeratorOrAdmin } from "~/domain/moderation/policy";
 import {
-  getLandingBySlug,
   assertFiltersDoNotCreateLandings,
+  getLandingBySlug,
 } from "~/services/seo/landings.server";
-import { buildLandingHreflang } from "~/services/seo/translations.server";
 import { buildBasicMeta } from "~/services/seo/meta";
 import {
   absoluteUrl,
   buildBreadcrumbList,
   buildItemList,
 } from "~/services/seo/structured-data";
+import { buildLandingHreflang } from "~/services/seo/translations.server";
 import type { Route } from "./+types/seo-landing";
-
-assertFiltersDoNotCreateLandings();
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data || data.notFound) {
@@ -30,12 +28,6 @@ export function meta({ data }: Route.MetaArgs) {
       { name: "robots", content: "noindex,nofollow" },
     ];
   }
-
-  const hreflang = buildLandingHreflang({
-    origin: data.origin,
-    slug: data.slug,
-    statuses: data.statuses,
-  });
 
   return [
     ...buildBasicMeta({
@@ -47,7 +39,7 @@ export function meta({ data }: Route.MetaArgs) {
       ogType: "website",
       structuredData: data.structuredData,
     }),
-    ...hreflang.map((link) => ({
+    ...data.hreflangLinks.map((link) => ({
       tagName: "link" as const,
       rel: "alternate",
       hrefLang: link.hreflang,
@@ -57,6 +49,8 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
+  assertFiltersDoNotCreateLandings();
+
   const locale = parseLocale(params.locale ?? "");
   const slug = params.slug ?? "";
   if (!locale || !slug || slug.length > 80) {
@@ -78,8 +72,9 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const statuses: Partial<Record<Locale, "draft" | "reviewed" | "stale" | "missing">> =
-    {};
+  const statuses: Partial<
+    Record<Locale, "draft" | "reviewed" | "stale" | "missing">
+  > = {};
   for (const loc of ["en", "zh-hans"] as Locale[]) {
     const alt = await getLandingBySlug(env.DB, slug, loc);
     statuses[loc] = alt?.translationStatus ?? "missing";
@@ -120,6 +115,15 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     ]),
   ];
 
+  const hreflangLinks = buildLandingHreflang({
+    origin,
+    slug,
+    statuses,
+  }).map((link) => ({
+    hreflang: link.hreflang,
+    href: link.href,
+  }));
+
   const localeData: LocaleLoaderData = {
     locale,
     htmlLang: htmlLang(locale),
@@ -137,6 +141,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     indexable: view.indexable && view.landing.indexStatus === "approved",
     canonicalPath,
     statuses,
+    hreflangLinks,
     themeItems,
     structuredData,
     preview: Boolean(preview && view.landing.indexStatus !== "approved"),
@@ -145,15 +150,8 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 }
 
 export default function SeoLanding({ loaderData }: Route.ComponentProps) {
-  const {
-    locale,
-    title,
-    intro,
-    faq,
-    themeItems,
-    preview,
-    canonicalPath,
-  } = loaderData;
+  const { locale, title, intro, faq, themeItems, preview, canonicalPath } =
+    loaderData;
 
   return (
     <main className="seo-landing" data-testid="seo-landing">

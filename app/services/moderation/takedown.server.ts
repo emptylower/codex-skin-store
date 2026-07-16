@@ -139,7 +139,11 @@ export async function createCopyrightClaim(
          AND status IN ('open', 'needs_information')
        LIMIT 1`,
     )
-    .bind(parsed.data.claimantEmail.toLowerCase(), parsed.data.targetThemeId, since)
+    .bind(
+      parsed.data.claimantEmail.toLowerCase(),
+      parsed.data.targetThemeId,
+      since,
+    )
     .first();
   if (duplicate) throw new TakedownError("duplicate");
 

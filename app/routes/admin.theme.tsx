@@ -103,20 +103,36 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
   try {
     if (intent === "theme.remove") {
-      const actor = await requireModerator(request, context.cloudflare.env, "theme.remove");
+      const actor = await requireModerator(
+        request,
+        context.cloudflare.env,
+        "theme.remove",
+      );
       await removeTheme(db, { actorId: actor.id, themeId: targetId, reason });
     } else if (intent === "theme.restore") {
-      const actor = await requireModerator(request, context.cloudflare.env, "theme.restore");
+      const actor = await requireModerator(
+        request,
+        context.cloudflare.env,
+        "theme.restore",
+      );
       await restoreTheme(db, { actorId: actor.id, themeId: targetId, reason });
     } else if (intent === "comment.remove") {
-      const actor = await requireModerator(request, context.cloudflare.env, "comment.remove");
+      const actor = await requireModerator(
+        request,
+        context.cloudflare.env,
+        "comment.remove",
+      );
       await removeComment(db, {
         actorId: actor.id,
         commentId: targetId,
         reason,
       });
     } else if (intent === "comment.restore") {
-      const actor = await requireModerator(request, context.cloudflare.env, "comment.restore");
+      const actor = await requireModerator(
+        request,
+        context.cloudflare.env,
+        "comment.restore",
+      );
       await restoreComment(db, {
         actorId: actor.id,
         commentId: targetId,

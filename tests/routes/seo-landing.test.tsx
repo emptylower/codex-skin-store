@@ -99,6 +99,7 @@ describe("seo-landing route", () => {
     } as never);
 
     expect(data.indexable).toBe(true);
+    expect(data.hreflangLinks).toBeDefined();
     const tags = meta({ data } as never);
     const ld = tags.find(
       (t) => t && typeof t === "object" && "script:ld+json" in t,

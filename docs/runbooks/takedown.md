@@ -19,12 +19,12 @@
 
 ## Resolution flow
 
-| Outcome | Effect |
-| --- | --- |
-| `needs_information` | Email claimant offline; claim stays open-ish; no theme change |
-| `accepted` | Theme removed via `theme.remove` + audit; evidence retained |
-| `rejected` | Claim closed; **does not** restore content if removed for another reason |
-| `withdrawn` | Claim closed; **does not** auto-restore content |
+| Outcome             | Effect                                                                   |
+| ------------------- | ------------------------------------------------------------------------ |
+| `needs_information` | Email claimant offline; claim stays open-ish; no theme change            |
+| `accepted`          | Theme removed via `theme.remove` + audit; evidence retained              |
+| `rejected`          | Claim closed; **does not** restore content if removed for another reason |
+| `withdrawn`         | Claim closed; **does not** auto-restore content                          |
 
 ## Requesting more information
 

@@ -117,7 +117,11 @@ export async function getLandingBySlug(
     translationStatus: translation.translationStatus,
     uniquenessScore: translation.uniquenessScore,
     indexable,
-    policy: indexable ? "index" : policy === "not_found" ? "not_found" : "noindex",
+    policy: indexable
+      ? "index"
+      : policy === "not_found"
+        ? "not_found"
+        : "noindex",
   };
 }
 

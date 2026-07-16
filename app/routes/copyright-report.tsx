@@ -6,8 +6,8 @@ import {
   parseLocale,
   type LocaleLoaderData,
 } from "~/i18n/config";
-import { createSourceObjectStore } from "~/platform/cloudflare/r2-sources.server";
 import { checkAbuseGate } from "~/services/moderation/abuse-gate.server";
+import { createEvidenceObjectStore } from "~/services/moderation/evidence-store.server";
 import {
   createCopyrightClaim,
   TakedownError,
@@ -80,7 +80,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   }
 
   try {
-    const sources = createSourceObjectStore(env.SOURCES);
+    const sources = createEvidenceObjectStore(env);
     const claim = await createCopyrightClaim(env.DB, {
       claimantEmail,
       claimantName,
