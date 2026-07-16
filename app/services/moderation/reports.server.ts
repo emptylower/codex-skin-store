@@ -1,15 +1,11 @@
 import { z } from "zod";
 
-export const REPORT_REASONS = [
-  "copyright",
-  "sexual_content",
-  "harassment",
-  "malware_or_unsafe",
-  "spam",
-  "other",
-] as const;
+import {
+  REPORT_REASONS,
+  type ReportReason,
+} from "~/domain/moderation/report-reasons";
 
-export type ReportReason = (typeof REPORT_REASONS)[number];
+export { REPORT_REASONS, type ReportReason };
 
 export const reportInputSchema = z.object({
   targetType: z.enum(["theme", "comment", "user"]),

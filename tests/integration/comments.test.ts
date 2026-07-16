@@ -18,7 +18,18 @@ async function seed() {
     `INSERT OR IGNORE INTO users (id, handle, display_name, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)`,
   )
-    .bind(author, author, author, NOW, NOW, "c-user", "c-user", "c-user", NOW, NOW)
+    .bind(
+      author,
+      author,
+      author,
+      NOW,
+      NOW,
+      "c-user",
+      "c-user",
+      "c-user",
+      NOW,
+      NOW,
+    )
     .run();
   await env.DB.prepare(
     `INSERT INTO themes (
@@ -77,6 +88,8 @@ describe("comments service", () => {
         commentId: c1.id,
         authorUserId: "c-user",
       }),
-    ).rejects.toMatchObject({ code: "forbidden" } satisfies Partial<CommentError>);
+    ).rejects.toMatchObject({
+      code: "forbidden",
+    } satisfies Partial<CommentError>);
   });
 });

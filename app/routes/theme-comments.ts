@@ -2,11 +2,6 @@ import { redirect } from "react-router";
 
 import { parseLocale } from "~/i18n/config";
 import {
-  clientIpFromRequest,
-  createD1AbuseGate,
-  hashIp,
-} from "~/platform/cloudflare/rate-limit.server";
-import {
   CommentError,
   deleteOwnComment,
   hideCommentByAuthor,
@@ -17,6 +12,7 @@ import {
   createIntent,
   signInPathWithIntent,
 } from "~/services/identity/intents.server";
+import { checkAbuseGate } from "~/services/moderation/abuse-gate.server";
 import type { Route } from "./+types/theme-comments";
 
 export async function action({ request, params, context }: Route.ActionArgs) {
@@ -44,18 +40,12 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         themeId,
         payload: { returnPath, body: body.slice(0, 1000) },
       });
-      throw redirect(
-        signInPathWithIntent(locale, intentRec.token, returnPath),
-      );
+      throw redirect(signInPathWithIntent(locale, intentRec.token, returnPath));
     }
 
-    const ip = clientIpFromRequest(request);
-    const ipHash = await hashIp(ip, env.BETTER_AUTH_SECRET);
-    const gate = createD1AbuseGate(env.DB);
-    const gateResult = await gate.check({
+    const gateResult = await checkAbuseGate(env, request, {
       action: "comment",
       userId: user.id,
-      ipHash,
     });
     if (!gateResult.allowed) {
       throw new Response("Too Many Requests", { status: 429 });
@@ -68,7 +58,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         authorLabel:
           ("name" in user && typeof user.name === "string" && user.name) ||
           ("displayName" in user &&
-            typeof (user as { displayName?: string }).displayName === "string" &&
+            typeof (user as { displayName?: string }).displayName ===
+              "string" &&
             (user as { displayName?: string }).displayName) ||
           "User",
         body,

@@ -9,14 +9,8 @@ import {
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
 import { validateReturnPath } from "~/domain/engagement/intent";
-import {
-  consumeIntent,
-  IntentError,
-} from "~/services/identity/intents.server";
-import {
-  getOptionalUser,
-  requireUser,
-} from "~/services/identity.server";
+import { consumeIntent, IntentError } from "~/services/identity/intents.server";
+import { getOptionalUser, requireUser } from "~/services/identity.server";
 import { addFavorite } from "~/services/engagement/favorites.server";
 import type { Route } from "./+types/auth.sign-in";
 
@@ -56,8 +50,7 @@ async function resumeAfterAuth(options: {
     const intent = await consumeIntent(env.DB, intentToken);
     const themeId = intent.themeId;
     const payloadReturn =
-      intent.payload.returnPath &&
-      validateReturnPath(intent.payload.returnPath)
+      intent.payload.returnPath && validateReturnPath(intent.payload.returnPath)
         ? intent.payload.returnPath
         : null;
     const dest = payloadReturn ?? returnPath;
@@ -81,21 +74,18 @@ async function resumeAfterAuth(options: {
           `/${locale}/themes/${encodeURIComponent(slug)}/download`,
         );
       case "copy_prompt": {
-        const base =
-          dest && validateReturnPath(dest) ? dest : themePath;
+        const base = dest && validateReturnPath(dest) ? dest : themePath;
         const url = new URL(base, "http://local.invalid");
         url.searchParams.set("resume", "copy_prompt");
         return redirect(`${url.pathname}${url.search}`);
       }
       case "favorite": {
         await addFavorite(env.DB, { userId: user.id, themeId });
-        const favDest =
-          dest && validateReturnPath(dest) ? dest : themePath;
+        const favDest = dest && validateReturnPath(dest) ? dest : themePath;
         return redirect(favDest);
       }
       case "comment": {
-        const base =
-          dest && validateReturnPath(dest) ? dest : themePath;
+        const base = dest && validateReturnPath(dest) ? dest : themePath;
         const url = new URL(base, "http://local.invalid");
         url.searchParams.set("resume", "comment");
         if (intent.payload.body) {
@@ -104,8 +94,7 @@ async function resumeAfterAuth(options: {
         return redirect(`${url.pathname}${url.search}`);
       }
       case "report": {
-        const base =
-          dest && validateReturnPath(dest) ? dest : themePath;
+        const base = dest && validateReturnPath(dest) ? dest : themePath;
         const url = new URL(base, "http://local.invalid");
         url.searchParams.set("resume", "report");
         if (intent.payload.reason) {
@@ -154,9 +143,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
       returnPath,
     });
     if (resumed) return resumed;
-    throw redirect(
-      safeCallback(locale, returnPath, localePath(locale)),
-    );
+    throw redirect(safeCallback(locale, returnPath, localePath(locale)));
   }
 
   const messages = getMessages(locale);

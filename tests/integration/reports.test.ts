@@ -21,7 +21,18 @@ describe("reports and abuse gate", () => {
       `INSERT OR IGNORE INTO users (id, handle, display_name, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)`,
     )
-      .bind(author, author, author, NOW, NOW, reporter, reporter, reporter, NOW, NOW)
+      .bind(
+        author,
+        author,
+        author,
+        NOW,
+        NOW,
+        reporter,
+        reporter,
+        reporter,
+        NOW,
+        NOW,
+      )
       .run();
     await env.DB.prepare(
       `INSERT INTO themes (
@@ -59,7 +70,9 @@ describe("reports and abuse gate", () => {
         reason: "spam",
         now: NOW + 1000,
       }),
-    ).rejects.toMatchObject({ code: "duplicate" } satisfies Partial<ReportError>);
+    ).rejects.toMatchObject({
+      code: "duplicate",
+    } satisfies Partial<ReportError>);
   });
 
   it("rate-limits using hashed IP windows", async () => {

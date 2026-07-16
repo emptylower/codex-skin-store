@@ -52,7 +52,10 @@ function bytesToBase64Url(bytes: Uint8Array): string {
     binary += String.fromCharCode(b);
   }
   // btoa is available in Workers; convert to base64url.
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 async function sha256Hex(input: string): Promise<string> {

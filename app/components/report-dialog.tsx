@@ -1,4 +1,4 @@
-import { REPORT_REASONS } from "~/services/moderation/reports.server";
+import { REPORT_REASONS } from "~/domain/moderation/report-reasons";
 
 type ReportDialogProps = {
   locale: string;

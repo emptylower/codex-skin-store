@@ -2,11 +2,7 @@ import { canDownload } from "~/domain/themes/state";
 import { recordEngagementEvent } from "~/services/engagement/events.server";
 
 export class FavoriteError extends Error {
-  readonly code:
-    | "not_found"
-    | "not_favoritable"
-    | "unauthorized"
-    | "conflict";
+  readonly code: "not_found" | "not_favoritable" | "unauthorized" | "conflict";
 
   constructor(code: FavoriteError["code"], message?: string) {
     super(message ?? code);
@@ -41,9 +37,7 @@ async function loadTheme(
 
 function isFavoritable(theme: FavoriteThemeRow): boolean {
   // New favorites only for public non-removed themes (package may still be processing).
-  return (
-    theme.visibility === "public" && theme.moderation_status !== "removed"
-  );
+  return theme.visibility === "public" && theme.moderation_status !== "removed";
 }
 
 /** Idempotent add: INSERT OR IGNORE + bounded counter bump when inserted. */
@@ -97,9 +91,7 @@ export async function removeFavorite(
   const theme = await loadTheme(db, input.themeId);
 
   const del = await db
-    .prepare(
-      `DELETE FROM favorites WHERE user_id = ? AND theme_id = ?`,
-    )
+    .prepare(`DELETE FROM favorites WHERE user_id = ? AND theme_id = ?`)
     .bind(input.userId, input.themeId)
     .run();
 

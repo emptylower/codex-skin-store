@@ -117,9 +117,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   throw new Response("Bad Request", { status: 400 });
 }
 
-export default function ThemePromptPage({
-  loaderData,
-}: Route.ComponentProps) {
+export default function ThemePromptPage({ loaderData }: Route.ComponentProps) {
   const { promptText, needsConfirm, themePath, slug, locale } = loaderData;
   const [copyState, setCopyState] = useState<"idle" | "copied" | "fallback">(
     "idle",

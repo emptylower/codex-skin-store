@@ -2,14 +2,11 @@ import { redirect } from "react-router";
 
 import { parseLocale } from "~/i18n/config";
 import {
-  createR2PackageStore,
-  streamPackageDownload,
-} from "~/platform/cloudflare/package-download.server";
-import {
   authorizePackageDownload,
   DeliveryError,
   markDownloadEvent,
 } from "~/services/engagement/delivery.server";
+import { streamThemePackage } from "~/services/engagement/package-download.server";
 import { getOptionalUser } from "~/services/identity.server";
 import {
   createIntent,
@@ -51,15 +48,14 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     throw redirect(signInPathWithIntent(locale, intent.token, returnPath));
   }
 
-  const response = await streamPackageDownload({
-    store: createR2PackageStore(env.PACKAGES),
+  const response = await streamThemePackage({
+    packages: env.PACKAGES,
     packageKey: authorized.packageKey,
     slug: authorized.slug,
     request,
   });
 
   if (response.status === 200 || response.status === 206) {
-    // Record after R2 open succeeded; never block bytes if event fails.
     context.cloudflare.ctx.waitUntil(
       markDownloadEvent(env.DB, {
         userId: user.id,

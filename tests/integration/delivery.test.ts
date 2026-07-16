@@ -113,7 +113,9 @@ describe("delivery authorization", () => {
     });
     await expect(
       authorizePackageDownload(env.DB, { slug: unlisted.slug }),
-    ).rejects.toMatchObject({ code: "not_ready" } satisfies Partial<DeliveryError>);
+    ).rejects.toMatchObject({
+      code: "not_ready",
+    } satisfies Partial<DeliveryError>);
 
     const removed = await seedReadyTheme({
       slug: `r-${crypto.randomUUID().slice(0, 6)}`,

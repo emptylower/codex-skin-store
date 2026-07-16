@@ -49,7 +49,9 @@ describe("auth intent store", () => {
 
     await expect(
       consumeIntent(env.DB, created.token, { now: NOW + 2_000 }),
-    ).rejects.toMatchObject({ code: "already_consumed" } satisfies Partial<IntentError>);
+    ).rejects.toMatchObject({
+      code: "already_consumed",
+    } satisfies Partial<IntentError>);
   });
 
   it("rejects expired and tampered tokens", async () => {

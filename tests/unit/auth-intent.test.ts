@@ -63,8 +63,6 @@ describe("intentPayloadSchema", () => {
     expect(() =>
       intentPayloadSchema.parse({ returnPath: "https://evil.example/" }),
     ).toThrow();
-    expect(() =>
-      intentPayloadSchema.parse({ evil: true }),
-    ).toThrow();
+    expect(() => intentPayloadSchema.parse({ evil: true })).toThrow();
   });
 });

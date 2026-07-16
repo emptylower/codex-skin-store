@@ -93,7 +93,8 @@ export const messages = {
     commentHide: "Hide",
     commentPlaceholder: "Share feedback about this theme",
     commentSubmit: "Post comment",
-    signInToComment: "Sign in to post a comment. You can still write a draft below.",
+    signInToComment:
+      "Sign in to post a comment. You can still write a draft below.",
     report: "Report",
     reportReason: "Reason",
     reportDetails: "Details (optional)",

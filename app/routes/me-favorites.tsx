@@ -61,7 +61,9 @@ export default function MeFavoritesPage({ loaderData }: Route.ComponentProps) {
       {items.length === 0 ? (
         <p>
           {messages.community.favoritesEmpty}{" "}
-          <a href={localePath(locale)}>{messages.community.browseMarketplace}</a>
+          <a href={localePath(locale)}>
+            {messages.community.browseMarketplace}
+          </a>
         </p>
       ) : (
         <ul className="me-favorites__list">
@@ -76,9 +78,7 @@ export default function MeFavoritesPage({ loaderData }: Route.ComponentProps) {
         </ul>
       )}
       <p>
-        <a href={localePath(locale, "/me/profile")}>
-          {messages.auth.profile}
-        </a>
+        <a href={localePath(locale, "/me/profile")}>{messages.auth.profile}</a>
       </p>
     </main>
   );

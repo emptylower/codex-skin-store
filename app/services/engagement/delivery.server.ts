@@ -2,11 +2,7 @@ import { canDownload } from "~/domain/themes/state";
 import { recordEngagementEvent } from "~/services/engagement/events.server";
 
 export class DeliveryError extends Error {
-  readonly code:
-    | "not_found"
-    | "unauthorized"
-    | "not_ready"
-    | "package_missing";
+  readonly code: "not_found" | "unauthorized" | "not_ready" | "package_missing";
 
   constructor(code: DeliveryError["code"], message?: string) {
     super(message ?? code);
@@ -91,7 +87,9 @@ async function loadById(
     .first<ThemeDeliveryRow>();
 }
 
-function assertDeliverable(row: ThemeDeliveryRow | null): asserts row is ThemeDeliveryRow {
+function assertDeliverable(
+  row: ThemeDeliveryRow | null,
+): asserts row is ThemeDeliveryRow {
   if (!row) throw new DeliveryError("not_found");
   const ok = canDownload({
     visibility: row.visibility as "public",

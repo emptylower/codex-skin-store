@@ -58,9 +58,7 @@ export async function deleteAccount(
       .bind(now, input.userId),
     // Events lose user_id.
     db
-      .prepare(
-        `UPDATE engagement_events SET user_id = NULL WHERE user_id = ?`,
-      )
+      .prepare(`UPDATE engagement_events SET user_id = NULL WHERE user_id = ?`)
       .bind(input.userId),
     // Owned themes become unlisted (aggregate/moderation records remain).
     db

@@ -13,6 +13,22 @@ npm run dev
 
 The dev server is typically available at `http://localhost:5173`.
 
+## Community features (consumer loop)
+
+Signed-in community flows use Better Auth OAuth. Pre-auth actions create single-use **auth intents** (10-minute TTL, SHA-256 token hash in D1) so download, copy prompt, favorite, comment, and report can resume after sign-in.
+
+| Feature          | Notes                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| Download         | Worker-proxied zip from private `PACKAGES` R2; key always from D1, never request input |
+| Copy prompt      | Post-auth confirmation button only — no automatic clipboard write after OAuth          |
+| Favorites        | Idempotent add/remove, personal library at `/:locale/me/favorites` (`noindex`)         |
+| Comments         | First-level plain text (max 1000 code points), works without JS                        |
+| Reports          | Controlled reasons; rate-limited; does not auto-hide content                           |
+| Trends           | Append-only engagement events; scheduled counter/trend reconciliation                  |
+| Account deletion | Typed confirmation; anonymizes comments/events; unlists owned themes                   |
+
+GIF uploads, payments, ratings, and DMs remain out of scope for this MVP.
+
 ## Verification
 
 ```bash
@@ -24,7 +40,9 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright projects cover desktop (1440×900), mobile (390×844), and JavaScript-disabled SSR content. Browsers can be installed with:
+Playwright projects cover desktop (1440×900), mobile (390×844), and JavaScript-disabled SSR content. Auth-gated e2e flows are skipped until a local auth fixture is wired; prefer `npm run test:workers` for gated delivery/favorites/comments/reports.
+
+Browsers can be installed with:
 
 ```bash
 npx playwright install chromium

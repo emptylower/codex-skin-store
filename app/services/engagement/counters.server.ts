@@ -18,9 +18,7 @@ export async function reconcileCounters(
   scheduledTime: number | Date,
 ): Promise<{ themesProcessed: number }> {
   const now =
-    typeof scheduledTime === "number"
-      ? scheduledTime
-      : scheduledTime.getTime();
+    typeof scheduledTime === "number" ? scheduledTime : scheduledTime.getTime();
 
   let offset = 0;
   let themesProcessed = 0;
@@ -33,7 +31,11 @@ export async function reconcileCounters(
        LIMIT ? OFFSET ?`,
     )
       .bind(PAGE_SIZE, offset)
-      .all<{ id: string; created_at: number; current_version: number | null }>();
+      .all<{
+        id: string;
+        created_at: number;
+        current_version: number | null;
+      }>();
 
     if (page.results.length === 0) break;
 
@@ -73,13 +75,7 @@ export async function reconcileCounters(
              updated_at = ?
          WHERE id = ?`,
       )
-        .bind(
-          downloads?.c ?? 0,
-          favorites?.c ?? 0,
-          trendScore,
-          now,
-          theme.id,
-        )
+        .bind(downloads?.c ?? 0, favorites?.c ?? 0, trendScore, now, theme.id)
         .run();
 
       themesProcessed += 1;

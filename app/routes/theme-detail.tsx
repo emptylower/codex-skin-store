@@ -143,9 +143,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
   const related = await marketplace.getRelatedThemes(slug, locale, 5);
   const user = await getOptionalUser(request, env);
-  const favorited = user
-    ? await isFavorited(env.DB, user.id, theme.id)
-    : false;
+  const favorited = user ? await isFavorited(env.DB, user.id, theme.id) : false;
   const comments = await listVisibleComments(env.DB, theme.id);
 
   // Theme author id for hide control (best-effort query).

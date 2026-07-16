@@ -76,9 +76,7 @@ describe("account deletion", () => {
         .first(),
     ).toBeNull();
     expect(
-      await env.DB.prepare(
-        `SELECT 1 AS ok FROM favorites WHERE user_id = ?`,
-      )
+      await env.DB.prepare(`SELECT 1 AS ok FROM favorites WHERE user_id = ?`)
         .bind(userId)
         .first(),
     ).toBeNull();

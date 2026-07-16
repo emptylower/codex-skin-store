@@ -46,10 +46,7 @@ async function assertPublicTheme(db: D1Database, themeId: string) {
 
   if (!theme) throw new CommentError("not_found");
   // Comments allowed on public non-removed themes (package readiness not required).
-  if (
-    theme.visibility !== "public" ||
-    theme.moderation_status === "removed"
-  ) {
+  if (theme.visibility !== "public" || theme.moderation_status === "removed") {
     throw new CommentError("theme_not_public");
   }
   return theme;

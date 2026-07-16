@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  REPORT_REASONS,
-  reportInputSchema,
-} from "~/services/moderation/reports.server";
+import { REPORT_REASONS } from "~/domain/moderation/report-reasons";
+import { reportInputSchema } from "~/services/moderation/reports.server";
 
 describe("report policy", () => {
   it("allows only controlled reasons", () => {
