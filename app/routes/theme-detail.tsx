@@ -1,4 +1,9 @@
 import { Breadcrumbs } from "~/components/breadcrumbs";
+import { CommentForm } from "~/components/comment-form";
+import { CommentList } from "~/components/comment-list";
+import { DeliveryActions } from "~/components/delivery-actions";
+import { FavoriteButton } from "~/components/favorite-button";
+import { ReportDialog } from "~/components/report-dialog";
 import { ThemeCard } from "~/components/theme-card";
 import { ThemeFacts } from "~/components/theme-facts";
 import { ThemePreview } from "~/components/theme-preview/theme-preview";
@@ -10,7 +15,10 @@ import {
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
+import { listVisibleComments } from "~/services/comments/comments.server";
+import { isFavorited } from "~/services/engagement/favorites.server";
 import { createServices } from "~/services/create-services.server";
+import { getOptionalUser } from "~/services/identity.server";
 import type { ThemeDetail as ThemeDetailModel } from "~/services/marketplace/types";
 import { isIndexableTheme } from "~/services/seo/index-policy";
 import {
@@ -52,7 +60,6 @@ export function meta({ data }: Route.MetaArgs) {
 
   const { theme, locale, origin, messages } = data;
   const canonicalPath = themePath(locale, theme.slug);
-  // Prefer full description for crawlable meta; fall back to summary.
   const description = theme.description || theme.summary;
   const title = `${theme.name} · Codex Skin Store`;
   const indexable = isIndexableTheme(
@@ -115,7 +122,7 @@ export function meta({ data }: Route.MetaArgs) {
   });
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
   const locale = parseLocale(params.locale ?? "");
   if (!locale) {
     throw new Response("Not Found", { status: 404 });
@@ -127,13 +134,36 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   }
 
   const messages = getMessages(locale);
-  const { marketplace } = createServices(context.cloudflare.env);
+  const env = context.cloudflare.env;
+  const { marketplace } = createServices(env);
   const theme = await marketplace.getTheme(slug, locale);
   if (!theme) {
     throw new Response("Not Found", { status: 404 });
   }
 
   const related = await marketplace.getRelatedThemes(slug, locale, 5);
+  const user = await getOptionalUser(request, env);
+  const favorited = user
+    ? await isFavorited(env.DB, user.id, theme.id)
+    : false;
+  const comments = await listVisibleComments(env.DB, theme.id);
+
+  // Theme author id for hide control (best-effort query).
+  const authorRow = await env.DB.prepare(
+    `SELECT author_id FROM themes WHERE id = ? LIMIT 1`,
+  )
+    .bind(theme.id)
+    .first<{ author_id: string }>();
+  const isThemeAuthor = Boolean(
+    user && authorRow && user.id === authorRow.author_id,
+  );
+
+  const url = new URL(request.url);
+  const resume = url.searchParams.get("resume");
+  const draft = url.searchParams.get("draft") ?? "";
+  const reportReason = url.searchParams.get("reason") ?? "";
+  const reported = url.searchParams.get("reported") === "1";
+
   const localeData: LocaleLoaderData = {
     locale,
     htmlLang: htmlLang(locale),
@@ -141,15 +171,40 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   return {
     ...localeData,
-    origin: context.cloudflare.env.APP_ORIGIN,
+    origin: env.APP_ORIGIN,
     messages,
     theme,
     related,
+    userId: user?.id ?? null,
+    favorited,
+    comments,
+    isThemeAuthor,
+    resumeCopyPrompt: resume === "copy_prompt",
+    resumeComment: resume === "comment",
+    resumeReport: resume === "report",
+    draftComment: draft,
+    reportReason,
+    reported,
   };
 }
 
 export default function ThemeDetailPage({ loaderData }: Route.ComponentProps) {
-  const { locale, messages, theme, related } = loaderData;
+  const {
+    locale,
+    messages,
+    theme,
+    related,
+    userId,
+    favorited,
+    comments,
+    isThemeAuthor,
+    resumeCopyPrompt,
+    resumeComment,
+    resumeReport,
+    draftComment,
+    reportReason,
+    reported,
+  } = loaderData;
   const previewExtras = readPreviewExtras(theme);
 
   return (
@@ -169,6 +224,27 @@ export default function ThemeDetailPage({ loaderData }: Route.ComponentProps) {
             {theme.creator.displayName}
           </a>
         </p>
+        <div className="theme-detail__actions">
+          <DeliveryActions
+            locale={locale}
+            slug={theme.slug}
+            labels={{
+              download: messages.actions.download,
+              copyPrompt: messages.actions.copyPrompt,
+            }}
+            resumeCopyPrompt={resumeCopyPrompt}
+          />
+          <FavoriteButton
+            locale={locale}
+            themeId={theme.id}
+            slug={theme.slug}
+            initialFavorited={favorited}
+            labels={{
+              add: messages.community.addFavorite,
+              remove: messages.community.removeFavorite,
+            }}
+          />
+        </div>
       </header>
 
       <section
@@ -242,6 +318,62 @@ export default function ThemeDetailPage({ loaderData }: Route.ComponentProps) {
           <span className="theme-detail__handle">@{theme.creator.handle}</span>
         </p>
       </section>
+
+      <CommentList
+        locale={locale}
+        slug={theme.slug}
+        themeId={theme.id}
+        comments={comments}
+        currentUserId={userId}
+        isThemeAuthor={isThemeAuthor}
+        labels={{
+          heading: messages.community.comments,
+          empty: messages.community.commentsEmpty,
+          deleted: messages.community.commentDeleted,
+          delete: messages.community.commentDelete,
+          hide: messages.community.commentHide,
+        }}
+      />
+
+      <CommentForm
+        locale={locale}
+        slug={theme.slug}
+        themeId={theme.id}
+        draft={resumeComment ? draftComment : ""}
+        signedIn={Boolean(userId)}
+        labels={{
+          heading: messages.community.comments,
+          placeholder: messages.community.commentPlaceholder,
+          submit: messages.community.commentSubmit,
+          signInToComment: messages.community.signInToComment,
+        }}
+      />
+
+      {reported ? (
+        <p role="status">{messages.community.reportedThanks}</p>
+      ) : null}
+
+      <ReportDialog
+        locale={locale}
+        themeId={theme.id}
+        slug={theme.slug}
+        open={resumeReport}
+        defaultReason={reportReason || undefined}
+        labels={{
+          heading: messages.community.report,
+          reason: messages.community.reportReason,
+          details: messages.community.reportDetails,
+          submit: messages.community.reportSubmit,
+          reasons: {
+            copyright: messages.community.reportReasonCopyright,
+            sexual_content: messages.community.reportReasonSexual,
+            harassment: messages.community.reportReasonHarassment,
+            malware_or_unsafe: messages.community.reportReasonMalware,
+            spam: messages.community.reportReasonSpam,
+            other: messages.community.reportReasonOther,
+          },
+        }}
+      />
 
       {related.length > 0 ? (
         <section

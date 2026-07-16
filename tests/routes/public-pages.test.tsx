@@ -370,10 +370,12 @@ describe("public theme detail", () => {
     expect(html).toContain(data.messages.theme.related);
     expect(html).toContain(data.messages.theme.installPrerequisites);
     expect(html).not.toMatch(/once available|milestone|roadmap/i);
-    // No gated actions yet (Milestone 3). "Downloads" count labels may still appear.
-    expect(html).not.toContain(`>${data.messages.actions.download}<`);
-    expect(html).not.toContain(data.messages.actions.copyPrompt);
-    expect(html).not.toMatch(/sign[- ]?in/i);
+    // Community delivery actions (Phase 3).
+    expect(html).toContain(data.messages.actions.download);
+    expect(html).toContain(data.messages.actions.copyPrompt);
+    expect(html).toContain('data-testid="delivery-actions"');
+    expect(html).toContain('data-testid="favorite-button"');
+    expect(html).toContain(data.messages.community.comments);
     expect(html).not.toMatch(/roadmap/i);
   });
 
