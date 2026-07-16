@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light dark;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #4b5563;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #030712;
+    --fg: #f9fafb;
+    --muted: #d1d5db;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.home,
+.error-boundary {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 4rem 1rem 2rem;
+}
+
+.home h1,
+.error-boundary h1 {
+  margin: 0 0 0.75rem;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.home p,
+.error-boundary p {
+  margin: 0.5rem 0;
+  color: var(--muted);
+}
+
+.error-boundary pre {
+  margin-top: 1rem;
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
