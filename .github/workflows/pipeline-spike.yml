@@ -1,0 +1,65 @@
+# Task 6 compatibility spike — APPROVAL REQUIRED before running remotely.
+#
+# Does not auto-run on push/PR. Trigger manually only after:
+#   npx wrangler deploy --config wrangler.spike.jsonc --env staging
+#
+# Gate decision (mechanical):
+#   - Full pass: ZIP_WRITER=client-zip, ENABLE_GIF_UPLOADS=true (Windows GIF only)
+#   - client-zip failure: keep ZIP_WRITER=fflate
+#   - GIF failure: keep ENABLE_GIF_UPLOADS=false
+#
+# Defaults remain ENABLE_GIF_UPLOADS=false and ZIP_WRITER=fflate until evidence exists.
+
+name: pipeline-spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      spike_url:
+        description: "Deployed spike base URL (approval-required deploy first)"
+        required: true
+        type: string
+
+jobs:
+  fetch-spike:
+    name: Fetch spike metadata
+    runs-on: ubuntu-latest
+    outputs:
+      payload: ${{ steps.spike.outputs.payload }}
+    steps:
+      - name: Call spike endpoint
+        id: spike
+        run: |
+          set -euo pipefail
+          echo "Calling ${{ inputs.spike_url }} (must already be deployed after approval)"
+          curl -fsSL "${{ inputs.spike_url }}" | tee spike.json
+          echo "payload=$(jq -c . spike.json)" >> "$GITHUB_OUTPUT"
+          jq -e '.flags.defaults.ENABLE_GIF_UPLOADS == false' spike.json
+          jq -e '.flags.defaults.ZIP_WRITER == "fflate"' spike.json
+
+  verify-macos:
+    name: Verify archives on macOS
+    needs: fetch-spike
+    runs-on: macos-15
+    steps:
+      - name: Placeholder package check
+        run: |
+          set -euo pipefail
+          echo "Approval-gated spike: download archives from spike when implemented."
+          echo "Run scripts/check-package.ts against extracted paths/bytes/timestamps."
+          echo "Spike URL: ${{ inputs.spike_url }}"
+          echo "This job documents the OS matrix; full binary compare lands with check-package."
+
+  verify-windows:
+    name: Verify archives on Windows
+    needs: fetch-spike
+    runs-on: windows-2025
+    steps:
+      - name: Placeholder package check
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Approval-gated spike: download archives from spike when implemented."
+          echo "Run scripts/check-package.ts against extracted paths/bytes/timestamps."
+          echo "Spike URL: ${{ inputs.spike_url }}"
+          echo "This job documents the OS matrix; full binary compare lands with check-package."

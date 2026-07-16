@@ -1,0 +1,25 @@
+{
+  // Isolated Task 6 pipeline spike. DO NOT deploy without explicit approval.
+  // Remote gate (approval required):
+  //   npx wrangler deploy --config wrangler.spike.jsonc --env staging
+  //   gh workflow run pipeline-spike.yml -f spike_url=https://...
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "codex-skin-store-pipeline-spike",
+  "main": "./workers/spikes/pipeline.ts",
+  "compatibility_date": "2026-07-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    // Conservative defaults until the deployed OS matrix gate passes.
+    "ENABLE_GIF_UPLOADS": "false",
+    "ZIP_WRITER": "fflate"
+  },
+  "env": {
+    "staging": {
+      "name": "codex-skin-store-pipeline-spike-staging",
+      "vars": {
+        "ENABLE_GIF_UPLOADS": "false",
+        "ZIP_WRITER": "fflate"
+      }
+    }
+  }
+}
