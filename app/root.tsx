@@ -5,8 +5,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
+import { defaultLocale, htmlLang, parseLocale } from "~/i18n/config";
 import type { Route } from "./+types/root";
 import "./styles/app.css";
 
@@ -23,9 +25,18 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+function documentLang(pathname: string): string {
+  const segment = pathname.split("/").filter(Boolean)[0] ?? "";
+  const locale = parseLocale(segment) ?? defaultLocale;
+  return htmlLang(locale);
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const lang = documentLang(pathname);
+
   return (
-    <html lang="en">
+    <html lang={lang}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
