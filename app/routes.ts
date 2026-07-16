@@ -22,6 +22,9 @@ export default [
   route(":locale/favorite", "routes/favorite.ts"),
   route(":locale/report", "routes/report.ts"),
   route(":locale/upload", "routes/upload.tsx"),
+  route(":locale/admin/reports", "routes/admin.reports.tsx"),
+  route(":locale/admin/theme", "routes/admin.theme.tsx"),
+  route(":locale/admin/user", "routes/admin.user.tsx"),
   route(
     "api/creator-artifacts/:themeId/:version/:artifact",
     "routes/api.creator-artifacts.$themeId.$version.$artifact.ts",
