@@ -3,6 +3,8 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { createDb, type Db } from "~/db/client.server";
 import {
   taxonomies,
+  taxonomyTranslations,
+  themeTaxonomies,
   themeTranslations,
   themes,
   users,
@@ -10,12 +12,11 @@ import {
 import { isPubliclyListable } from "~/domain/themes/state";
 import type { Locale } from "~/i18n/config";
 import type {
-  IndexableCreatorSitemapEntry,
-  IndexableTaxonomySitemapEntry,
-  IndexableThemeSitemapEntry,
+  CreatorSitemapCandidate,
   SeoRepository,
+  TaxonomySitemapCandidate,
+  ThemeSitemapCandidate,
 } from "~/platform/ports";
-import { isIndexableTheme } from "~/services/seo/index-policy";
 
 export class CloudflareSeoRepository implements SeoRepository {
   private readonly db: Db;
@@ -24,7 +25,7 @@ export class CloudflareSeoRepository implements SeoRepository {
     this.db = createDb(d1);
   }
 
-  async listIndexableThemes(): Promise<IndexableThemeSitemapEntry[]> {
+  async listThemeSitemapCandidates(): Promise<ThemeSitemapCandidate[]> {
     const themeRows = await this.db
       .select({
         id: themes.id,
@@ -73,7 +74,7 @@ export class CloudflareSeoRepository implements SeoRepository {
       translationsByTheme.set(row.themeId, list);
     }
 
-    const entries: IndexableThemeSitemapEntry[] = [];
+    const entries: ThemeSitemapCandidate[] = [];
 
     for (const theme of themeRows) {
       if (!isPubliclyListable(theme)) continue;
@@ -81,51 +82,35 @@ export class CloudflareSeoRepository implements SeoRepository {
       const translations = translationsByTheme.get(theme.id) ?? [];
       const translationStatus: Partial<Record<Locale, "draft" | "reviewed">> =
         {};
-      let latestTranslationUpdate = theme.updatedAt;
+      let latestUpdate = theme.updatedAt;
 
       for (const translation of translations) {
         translationStatus[translation.locale] = translation.translationStatus;
-        if (translation.updatedAt > latestTranslationUpdate) {
-          latestTranslationUpdate = translation.updatedAt;
+        if (translation.updatedAt > latestUpdate) {
+          latestUpdate = translation.updatedAt;
         }
       }
 
-      const locales = (
-        Object.entries(translationStatus) as Array<
-          [Locale, "draft" | "reviewed"]
-        >
-      )
-        .filter(([locale]) =>
-          isIndexableTheme(
-            {
-              visibility: theme.visibility,
-              moderationStatus: theme.moderationStatus,
-              packageStatus: theme.packageStatus,
-              translationStatus,
-            },
-            locale,
-          ),
-        )
-        .map(([locale]) => locale);
-
-      if (locales.length === 0) continue;
-
       entries.push({
         slug: theme.slug,
-        updatedAt: latestTranslationUpdate,
-        locales,
+        updatedAt: latestUpdate,
+        visibility: theme.visibility,
+        moderationStatus: theme.moderationStatus,
+        packageStatus: theme.packageStatus,
+        translationStatus,
       });
     }
 
     return entries;
   }
 
-  async listIndexableCreators(): Promise<IndexableCreatorSitemapEntry[]> {
-    // Creators with at least one public ready theme.
+  async listCreatorSitemapCandidates(): Promise<CreatorSitemapCandidate[]> {
+    // Per-locale public ready reviewed theme counts for each creator.
     const rows = await this.db
       .select({
         handle: users.handle,
-        updatedAt: users.updatedAt,
+        userUpdatedAt: users.updatedAt,
+        locale: themeTranslations.locale,
         themeCount: sql<number>`count(${themes.id})`.mapWith(Number),
         latestThemeUpdate: sql<number>`max(${themes.updatedAt})`.mapWith(
           Number,
@@ -133,6 +118,13 @@ export class CloudflareSeoRepository implements SeoRepository {
       })
       .from(users)
       .innerJoin(themes, eq(themes.authorId, users.id))
+      .innerJoin(
+        themeTranslations,
+        and(
+          eq(themeTranslations.themeId, themes.id),
+          eq(themeTranslations.translationStatus, "reviewed"),
+        ),
+      )
       .where(
         and(
           eq(themes.visibility, "public"),
@@ -140,31 +132,114 @@ export class CloudflareSeoRepository implements SeoRepository {
           eq(themes.packageStatus, "ready"),
         ),
       )
-      .groupBy(users.id);
+      .groupBy(users.id, themeTranslations.locale);
 
-    return rows
-      .filter((row) => row.themeCount > 0)
-      .map((row) => ({
-        handle: row.handle,
-        updatedAt: Math.max(row.updatedAt, row.latestThemeUpdate || 0),
-      }));
+    const byHandle = new Map<string, CreatorSitemapCandidate>();
+
+    for (const row of rows) {
+      if (row.themeCount <= 0) continue;
+
+      const existing = byHandle.get(row.handle);
+      if (existing) {
+        existing.publicThemeCountByLocale[row.locale] = row.themeCount;
+        existing.updatedAt = Math.max(
+          existing.updatedAt,
+          row.userUpdatedAt,
+          row.latestThemeUpdate || 0,
+        );
+      } else {
+        byHandle.set(row.handle, {
+          handle: row.handle,
+          updatedAt: Math.max(row.userUpdatedAt, row.latestThemeUpdate || 0),
+          publicThemeCountByLocale: {
+            [row.locale]: row.themeCount,
+          },
+        });
+      }
+    }
+
+    return [...byHandle.values()];
   }
 
-  async listIndexableTaxonomies(): Promise<IndexableTaxonomySitemapEntry[]> {
-    // Controlled taxonomies that exist are eligible as hub pages.
-    const rows = await this.db
+  async listTaxonomySitemapCandidates(): Promise<TaxonomySitemapCandidate[]> {
+    const taxonomyRows = await this.db
       .select({
+        id: taxonomies.id,
         dimension: taxonomies.dimension,
         key: taxonomies.key,
         updatedAt: taxonomies.updatedAt,
       })
       .from(taxonomies);
 
-    return rows.map((row) => ({
-      dimension: row.dimension,
-      key: row.key,
-      updatedAt: row.updatedAt,
-    }));
+    if (taxonomyRows.length === 0) return [];
+
+    const translationRows = await this.db
+      .select({
+        taxonomyId: taxonomyTranslations.taxonomyId,
+        locale: taxonomyTranslations.locale,
+      })
+      .from(taxonomyTranslations);
+
+    const localesByTaxonomy = new Map<string, Locale[]>();
+    for (const row of translationRows) {
+      const list = localesByTaxonomy.get(row.taxonomyId) ?? [];
+      list.push(row.locale);
+      localesByTaxonomy.set(row.taxonomyId, list);
+    }
+
+    // Public ready reviewed themes linked to each taxonomy, per locale.
+    const inventoryRows = await this.db
+      .select({
+        taxonomyId: themeTaxonomies.taxonomyId,
+        locale: themeTranslations.locale,
+        themeCount: sql<number>`count(distinct ${themes.id})`.mapWith(Number),
+        latestThemeUpdate: sql<number>`max(${themes.updatedAt})`.mapWith(
+          Number,
+        ),
+      })
+      .from(themeTaxonomies)
+      .innerJoin(themes, eq(themes.id, themeTaxonomies.themeId))
+      .innerJoin(
+        themeTranslations,
+        and(
+          eq(themeTranslations.themeId, themes.id),
+          eq(themeTranslations.translationStatus, "reviewed"),
+        ),
+      )
+      .where(
+        and(
+          eq(themes.visibility, "public"),
+          ne(themes.moderationStatus, "removed"),
+          eq(themes.packageStatus, "ready"),
+        ),
+      )
+      .groupBy(themeTaxonomies.taxonomyId, themeTranslations.locale);
+
+    const inventoryByTaxonomy = new Map<
+      string,
+      { counts: Partial<Record<Locale, number>>; latest: number }
+    >();
+
+    for (const row of inventoryRows) {
+      const entry = inventoryByTaxonomy.get(row.taxonomyId) ?? {
+        counts: {},
+        latest: 0,
+      };
+      entry.counts[row.locale] = row.themeCount;
+      entry.latest = Math.max(entry.latest, row.latestThemeUpdate || 0);
+      inventoryByTaxonomy.set(row.taxonomyId, entry);
+    }
+
+    return taxonomyRows.map((row) => {
+      const inventory = inventoryByTaxonomy.get(row.id);
+      return {
+        dimension: row.dimension,
+        key: row.key,
+        updatedAt: Math.max(row.updatedAt, inventory?.latest ?? 0),
+        localesWithTranslation: localesByTaxonomy.get(row.id) ?? [],
+        publicThemeCountByLocale: inventory?.counts ?? {},
+      };
+    });
   }
 }
 

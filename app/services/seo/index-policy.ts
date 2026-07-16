@@ -16,6 +16,8 @@ export type TaxonomySeoRecord = {
   exists: boolean;
   dimension: string;
   key: string;
+  /** Public ready themes in the current locale for this hub. Empty hubs are noindex. */
+  publicThemeCount: number;
 };
 
 export function isIndexableTheme(
@@ -54,6 +56,15 @@ export function isIndexableCreator(creator: CreatorSeoRecord): boolean {
   return creator.publicThemeCount > 0;
 }
 
+/**
+ * Taxonomy hubs are indexable only when they exist as controlled dimensions
+ * and have at least one public theme in the locale being evaluated.
+ */
 export function isIndexableTaxonomy(taxonomy: TaxonomySeoRecord): boolean {
-  return taxonomy.exists && taxonomy.dimension.length > 0 && taxonomy.key.length > 0;
+  return (
+    taxonomy.exists &&
+    taxonomy.dimension.length > 0 &&
+    taxonomy.key.length > 0 &&
+    taxonomy.publicThemeCount > 0
+  );
 }

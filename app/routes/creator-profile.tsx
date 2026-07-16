@@ -5,6 +5,7 @@ import {
   localePath,
   locales,
   parseLocale,
+  type Locale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
@@ -28,7 +29,7 @@ export function meta({ data }: Route.MetaArgs) {
     return [{ title: "Codex Skin Store" }];
   }
 
-  const { creator, locale, origin, messages } = data;
+  const { creator, locale, origin, messages, availableLocales } = data;
   const canonicalPath = creatorPath(locale, creator.handle);
   const title = `${creator.displayName} · Codex Skin Store`;
   const description = creator.bio || creator.displayName;
@@ -36,10 +37,13 @@ export function meta({ data }: Route.MetaArgs) {
     publicThemeCount: creator.themes.length,
   });
 
-  const alternates: HreflangAlternate[] = locales.map((code) => ({
-    locale: code,
-    path: creatorPath(code, creator.handle),
-  }));
+  // Only emit hreflang for locales where the creator has public themes.
+  const alternates: HreflangAlternate[] = availableLocales.map(
+    (code: Locale) => ({
+      locale: code,
+      path: creatorPath(code, creator.handle),
+    }),
+  );
 
   const personUrl = absoluteUrl(origin, canonicalPath);
   const structuredData = [
@@ -66,7 +70,7 @@ export function meta({ data }: Route.MetaArgs) {
     origin,
     canonicalPath,
     indexable,
-    alternates: indexable ? alternates : undefined,
+    alternates: indexable && alternates.length > 0 ? alternates : undefined,
     ogType: "profile",
     structuredData,
   });
@@ -90,6 +94,19 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
+  // Locales with public inventory are the only indexable hreflang targets.
+  const availableLocales: Locale[] = [];
+  for (const code of locales) {
+    if (code === locale) {
+      if (creator.themes.length > 0) availableLocales.push(code);
+      continue;
+    }
+    const other = await marketplace.getCreator(handle, code);
+    if (other && other.themes.length > 0) {
+      availableLocales.push(code);
+    }
+  }
+
   const localeData: LocaleLoaderData = {
     locale,
     htmlLang: htmlLang(locale),
@@ -100,6 +117,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     origin: context.cloudflare.env.APP_ORIGIN,
     messages,
     creator,
+    availableLocales,
   };
 }
 

@@ -5,6 +5,7 @@ import {
   localePath,
   locales,
   parseLocale,
+  type Locale,
   type LocaleLoaderData,
 } from "~/i18n/config";
 import { getMessages } from "~/i18n/messages";
@@ -41,20 +42,25 @@ export function meta({ data }: Route.MetaArgs) {
     return [{ title: "Codex Skin Store" }];
   }
 
-  const { taxonomy, locale, origin, messages } = data;
+  const { taxonomy, locale, origin, messages, themes, availableLocales } = data;
   const canonicalPath = taxonomyPath(locale, taxonomy.dimension, taxonomy.key);
   const title = `${taxonomy.label} · Codex Skin Store`;
   const description = `${taxonomy.label} themes for Codex Desktop.`;
+  // Empty hubs must not be indexed.
   const indexable = isIndexableTaxonomy({
     exists: true,
     dimension: taxonomy.dimension,
     key: taxonomy.key,
+    publicThemeCount: themes.length,
   });
 
-  const alternates: HreflangAlternate[] = locales.map((code) => ({
-    locale: code,
-    path: taxonomyPath(code, taxonomy.dimension, taxonomy.key),
-  }));
+  // Only emit hreflang where translation exists and inventory > 0.
+  const alternates: HreflangAlternate[] = availableLocales.map(
+    (code: Locale) => ({
+      locale: code,
+      path: taxonomyPath(code, taxonomy.dimension, taxonomy.key),
+    }),
+  );
 
   const structuredData = [
     buildBreadcrumbList(
@@ -74,7 +80,7 @@ export function meta({ data }: Route.MetaArgs) {
     origin,
     canonicalPath,
     indexable,
-    alternates: indexable ? alternates : undefined,
+    alternates: indexable && alternates.length > 0 ? alternates : undefined,
     ogType: "website",
     structuredData,
   });
@@ -105,6 +111,27 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     sort: "trending",
   });
 
+  // Locales with a translation AND at least one public theme are indexable.
+  const availableLocales: Locale[] = [];
+  for (const code of locales) {
+    if (code === locale) {
+      if (themes.length > 0) availableLocales.push(code);
+      continue;
+    }
+
+    const otherTaxonomy = await marketplace.getTaxonomy(dimension, key, code);
+    if (!otherTaxonomy) continue;
+
+    const { items } = await marketplace.listThemes(code, {
+      taxonomy: [key],
+      taxonomyDimension: dimension,
+      sort: "trending",
+    });
+    if (items.length > 0) {
+      availableLocales.push(code);
+    }
+  }
+
   const localeData: LocaleLoaderData = {
     locale,
     htmlLang: htmlLang(locale),
@@ -116,6 +143,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     messages,
     taxonomy,
     themes,
+    availableLocales,
   };
 }
 

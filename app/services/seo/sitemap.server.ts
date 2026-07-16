@@ -1,6 +1,17 @@
 import type { Locale } from "~/i18n/config";
 import { localePath, locales } from "~/i18n/config";
-import type { SeoRepository, SitemapUrlRecord } from "~/platform/ports";
+import type {
+  CreatorSitemapCandidate,
+  SeoRepository,
+  SitemapUrlRecord,
+  TaxonomySitemapCandidate,
+  ThemeSitemapCandidate,
+} from "~/platform/ports";
+import {
+  isIndexableCreator,
+  isIndexableTaxonomy,
+  isIndexableTheme,
+} from "./index-policy";
 import { absoluteUrl } from "./structured-data";
 import {
   creatorPath,
@@ -59,17 +70,40 @@ function collectPolicyUrls(origin: string, now: number): SitemapUrlRecord[] {
   return urls;
 }
 
+function indexableThemeLocales(theme: ThemeSitemapCandidate): Locale[] {
+  return locales.filter((locale) => isIndexableTheme(theme, locale));
+}
+
+function indexableCreatorLocales(creator: CreatorSitemapCandidate): Locale[] {
+  return locales.filter((locale) =>
+    isIndexableCreator({
+      publicThemeCount: creator.publicThemeCountByLocale[locale] ?? 0,
+    }),
+  );
+}
+
+function indexableTaxonomyLocales(
+  taxonomy: TaxonomySitemapCandidate,
+): Locale[] {
+  const translationSet = new Set(taxonomy.localesWithTranslation);
+  return locales.filter((locale) => {
+    if (!translationSet.has(locale)) return false;
+    return isIndexableTaxonomy({
+      exists: true,
+      dimension: taxonomy.dimension,
+      key: taxonomy.key,
+      publicThemeCount: taxonomy.publicThemeCountByLocale[locale] ?? 0,
+    });
+  });
+}
+
 function expandThemeUrls(
   origin: string,
-  themes: Array<{
-    slug: string;
-    updatedAt: number;
-    locales: Locale[];
-  }>,
+  themes: ThemeSitemapCandidate[],
 ): SitemapUrlRecord[] {
   const urls: SitemapUrlRecord[] = [];
   for (const theme of themes) {
-    for (const locale of theme.locales) {
+    for (const locale of indexableThemeLocales(theme)) {
       urls.push({
         loc: absoluteUrl(origin, themePath(locale, theme.slug)),
         lastmod: theme.updatedAt,
@@ -81,11 +115,11 @@ function expandThemeUrls(
 
 function expandCreatorUrls(
   origin: string,
-  creators: Array<{ handle: string; updatedAt: number }>,
+  creators: CreatorSitemapCandidate[],
 ): SitemapUrlRecord[] {
   const urls: SitemapUrlRecord[] = [];
   for (const creator of creators) {
-    for (const locale of locales) {
+    for (const locale of indexableCreatorLocales(creator)) {
       urls.push({
         loc: absoluteUrl(origin, creatorPath(locale, creator.handle)),
         lastmod: creator.updatedAt,
@@ -97,15 +131,11 @@ function expandCreatorUrls(
 
 function expandTaxonomyUrls(
   origin: string,
-  taxonomies: Array<{
-    dimension: string;
-    key: string;
-    updatedAt: number;
-  }>,
+  taxonomies: TaxonomySitemapCandidate[],
 ): SitemapUrlRecord[] {
   const urls: SitemapUrlRecord[] = [];
   for (const taxonomy of taxonomies) {
-    for (const locale of locales) {
+    for (const locale of indexableTaxonomyLocales(taxonomy)) {
       urls.push({
         loc: absoluteUrl(
           origin,
@@ -148,9 +178,9 @@ export function createSeoService(repo: SeoRepository): SeoService {
     async buildSitemapXml(origin: string) {
       const now = Date.now();
       const [themes, creators, taxonomies] = await Promise.all([
-        repo.listIndexableThemes(),
-        repo.listIndexableCreators(),
-        repo.listIndexableTaxonomies(),
+        repo.listThemeSitemapCandidates(),
+        repo.listCreatorSitemapCandidates(),
+        repo.listTaxonomySitemapCandidates(),
       ]);
 
       const urls: SitemapUrlRecord[] = [

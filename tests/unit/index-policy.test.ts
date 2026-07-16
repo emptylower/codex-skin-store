@@ -86,12 +86,13 @@ describe("isIndexableCreator", () => {
 });
 
 describe("isIndexableTaxonomy", () => {
-  it("indexes controlled taxonomy hubs that exist", () => {
+  it("indexes controlled taxonomy hubs that exist and have public inventory", () => {
     expect(
       isIndexableTaxonomy({
         exists: true,
         dimension: "style",
         key: "neon",
+        publicThemeCount: 1,
       }),
     ).toBe(true);
     expect(
@@ -99,6 +100,15 @@ describe("isIndexableTaxonomy", () => {
         exists: false,
         dimension: "style",
         key: "missing",
+        publicThemeCount: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isIndexableTaxonomy({
+        exists: true,
+        dimension: "style",
+        key: "empty",
+        publicThemeCount: 0,
       }),
     ).toBe(false);
   });

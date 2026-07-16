@@ -1,9 +1,17 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import {
+  loader as creatorLoader,
+  meta as creatorMeta,
+} from "~/routes/creator-profile";
 import { loader as marketplaceLoader, meta as marketplaceMeta } from "~/routes/marketplace";
 import { loader as robotsLoader } from "~/routes/robots[.]txt";
 import { loader as sitemapLoader } from "~/routes/sitemap[.]xml";
+import {
+  loader as taxonomyLoader,
+  meta as taxonomyMeta,
+} from "~/routes/taxonomy-hub";
 import { loader as themeLoader, meta as themeMeta } from "~/routes/theme-detail";
 
 const NOW = 1_700_400_000_000;
@@ -118,7 +126,14 @@ async function insertTheme(options: {
   }
 }
 
-async function insertTaxonomy(id: string, dimension: string, key: string) {
+async function insertTaxonomy(
+  id: string,
+  dimension: string,
+  key: string,
+  options?: { includeZh?: boolean },
+) {
+  const includeZh = options?.includeZh ?? true;
+
   await env.DB.prepare(
     `INSERT INTO taxonomies (id, dimension, key, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?)`,
@@ -134,12 +149,22 @@ async function insertTaxonomy(id: string, dimension: string, key: string) {
     .bind(`tt-${id}-en`, id, key, NOW, NOW)
     .run();
 
+  if (includeZh) {
+    await env.DB.prepare(
+      `INSERT INTO taxonomy_translations (
+         id, taxonomy_id, locale, label, synonyms_json, created_at, updated_at
+       ) VALUES (?, ?, 'zh-hans', ?, '[]', ?, ?)`,
+    )
+      .bind(`tt-${id}-zh`, id, key, NOW, NOW)
+      .run();
+  }
+}
+
+async function linkThemeTaxonomy(themeId: string, taxonomyId: string) {
   await env.DB.prepare(
-    `INSERT INTO taxonomy_translations (
-       id, taxonomy_id, locale, label, synonyms_json, created_at, updated_at
-     ) VALUES (?, ?, 'zh-hans', ?, '[]', ?, ?)`,
+    `INSERT INTO theme_taxonomies (theme_id, taxonomy_id) VALUES (?, ?)`,
   )
-    .bind(`tt-${id}-zh`, id, key, NOW, NOW)
+    .bind(themeId, taxonomyId)
     .run();
 }
 
@@ -177,6 +202,45 @@ function marketplaceArgs(url: string, locale: string) {
   } as unknown as Parameters<typeof marketplaceLoader>[0];
 }
 
+function creatorArgs(url: string, locale: string, handle: string) {
+  return {
+    request: new Request(url),
+    params: { locale, handle },
+    context: {
+      cloudflare: {
+        env,
+        ctx: {
+          waitUntil() {},
+          passThroughOnException() {},
+          props: {},
+        },
+      },
+    },
+  } as unknown as Parameters<typeof creatorLoader>[0];
+}
+
+function taxonomyArgs(
+  url: string,
+  locale: string,
+  dimension: string,
+  key: string,
+) {
+  return {
+    request: new Request(url),
+    params: { locale, dimension, key },
+    context: {
+      cloudflare: {
+        env,
+        ctx: {
+          waitUntil() {},
+          passThroughOnException() {},
+          props: {},
+        },
+      },
+    },
+  } as unknown as Parameters<typeof taxonomyLoader>[0];
+}
+
 function resourceArgs(url: string) {
   return {
     request: new Request(url),
@@ -192,6 +256,16 @@ function resourceArgs(url: string) {
       },
     },
   } as unknown as Parameters<typeof sitemapLoader>[0];
+}
+
+function metaLocation(pathname: string, search = "") {
+  return {
+    pathname,
+    search,
+    hash: "",
+    state: null,
+    key: "default",
+  };
 }
 
 function findCanonical(tags: Array<Record<string, unknown>>) {
@@ -250,7 +324,12 @@ beforeAll(async () => {
     updatedAt: NOW + 2000,
   });
 
-  await insertTaxonomy("tax-seo-neon", "style", "seo-neon");
+  // Empty hub: controlled key with translations but no public themes linked.
+  await insertTaxonomy("tax-seo-empty", "style", "minimal");
+
+  // Populated hub: controlled key linked to bilingual public theme.
+  await insertTaxonomy("tax-seo-neon", "style", "neon");
+  await linkThemeTaxonomy("theme-seo-aurora", "tax-seo-neon");
 });
 
 describe("theme SEO meta", () => {
@@ -438,6 +517,77 @@ describe("marketplace SEO meta", () => {
   });
 });
 
+describe("creator SEO meta", () => {
+  it("omits zh-Hans hreflang when creator has no public zh themes", async () => {
+    // seo-lin only has an English-reviewed public theme (zh translation is draft).
+    const data = await creatorLoader(
+      creatorArgs(`${ORIGIN}/en/creators/seo-lin`, "en", "seo-lin"),
+    );
+
+    const tags = creatorMeta({
+      data,
+      params: { locale: "en", handle: "seo-lin" },
+      location: metaLocation("/en/creators/seo-lin"),
+      matches: [] as never,
+    }) as Array<Record<string, unknown>>;
+
+    const alts = findAlternates(tags);
+    const langs = alts.map((alt) => alt.hreflang);
+    expect(langs).toContain("en");
+    expect(langs).toContain("x-default");
+    expect(langs).not.toContain("zh-Hans");
+  });
+});
+
+describe("taxonomy SEO meta", () => {
+  it("noindexes empty taxonomy hubs and skips hreflang", async () => {
+    const data = await taxonomyLoader(
+      taxonomyArgs(
+        `${ORIGIN}/en/taxonomies/style/minimal`,
+        "en",
+        "style",
+        "minimal",
+      ),
+    );
+
+    const tags = taxonomyMeta({
+      data,
+      params: { locale: "en", dimension: "style", key: "minimal" },
+      location: metaLocation("/en/taxonomies/style/minimal"),
+      matches: [] as never,
+    }) as Array<Record<string, unknown>>;
+
+    expect(findRobots(tags)?.content).toMatch(/noindex\s*,\s*follow/i);
+    expect(findAlternates(tags)).toHaveLength(0);
+  });
+
+  it("indexes populated taxonomy hubs with reciprocal hreflang", async () => {
+    const data = await taxonomyLoader(
+      taxonomyArgs(
+        `${ORIGIN}/en/taxonomies/style/neon`,
+        "en",
+        "style",
+        "neon",
+      ),
+    );
+
+    const tags = taxonomyMeta({
+      data,
+      params: { locale: "en", dimension: "style", key: "neon" },
+      location: metaLocation("/en/taxonomies/style/neon"),
+      matches: [] as never,
+    }) as Array<Record<string, unknown>>;
+
+    expect(findRobots(tags)?.content ?? "index,follow").not.toMatch(/noindex/i);
+    const byLang = Object.fromEntries(
+      findAlternates(tags).map((alt) => [alt.hreflang, alt.href]),
+    );
+    expect(byLang.en).toBe(`${ORIGIN}/en/taxonomies/style/neon`);
+    expect(byLang["zh-Hans"]).toBe(`${ORIGIN}/zh-hans/taxonomies/style/neon`);
+    expect(byLang["x-default"]).toBe(`${ORIGIN}/en/taxonomies/style/neon`);
+  });
+});
+
 describe("robots and sitemap", () => {
   it("serves robots.txt that points at sitemap and does not block public assets", async () => {
     const response = await robotsLoader(resourceArgs(`${ORIGIN}/robots.txt`));
@@ -451,7 +601,7 @@ describe("robots and sitemap", () => {
     expect(body).not.toMatch(/Disallow:\s*\*\.(png|jpg|svg|webp)/i);
   });
 
-  it("includes reviewed public theme/creator/taxonomy/policy URLs with lastmod", async () => {
+  it("includes only indexable theme/creator/taxonomy/policy URLs with lastmod", async () => {
     const response = await sitemapLoader(resourceArgs(`${ORIGIN}/sitemap.xml`));
     expect(response).toBeInstanceOf(Response);
     const body = await (response as Response).text();
@@ -464,7 +614,15 @@ describe("robots and sitemap", () => {
     expect(body).not.toContain(`${ORIGIN}/zh-hans/themes/seo-draft-zh-only-en`);
     expect(body).toContain(`${ORIGIN}/en/themes/seo-draft-zh-only-en`);
     expect(body).toContain(`${ORIGIN}/en/creators/seo-nova`);
-    expect(body).toContain(`${ORIGIN}/en/taxonomies/style/seo-neon`);
+    expect(body).toContain(`${ORIGIN}/zh-hans/creators/seo-nova`);
+    // Creator with only EN public inventory must not emit zh creator URL.
+    expect(body).toContain(`${ORIGIN}/en/creators/seo-lin`);
+    expect(body).not.toContain(`${ORIGIN}/zh-hans/creators/seo-lin`);
+    // Empty taxonomy hub must be excluded; populated hub included for both locales.
+    expect(body).not.toContain(`${ORIGIN}/en/taxonomies/style/minimal`);
+    expect(body).not.toContain(`${ORIGIN}/zh-hans/taxonomies/style/minimal`);
+    expect(body).toContain(`${ORIGIN}/en/taxonomies/style/neon`);
+    expect(body).toContain(`${ORIGIN}/zh-hans/taxonomies/style/neon`);
     expect(body).toContain(`${ORIGIN}/en/terms`);
     expect(body).toContain(`${ORIGIN}/en/privacy`);
     expect(body).toContain(`${ORIGIN}/en/copyright`);

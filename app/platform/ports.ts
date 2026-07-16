@@ -36,26 +36,46 @@ export type SitemapUrlRecord = {
   lastmod: number | null;
 };
 
-export type IndexableThemeSitemapEntry = {
+/**
+ * Raw theme candidates for sitemap assembly.
+ * Indexability is decided in the SEO service layer (not platform).
+ */
+export type ThemeSitemapCandidate = {
   slug: string;
   updatedAt: number;
-  /** Locales with reviewed translations that may be indexed. */
-  locales: Locale[];
+  visibility: "draft" | "public" | "unlisted" | "hidden";
+  moderationStatus: "clean" | "flagged" | "removed";
+  packageStatus: "processing" | "ready" | "failed";
+  translationStatus: Partial<Record<Locale, "draft" | "reviewed">>;
 };
 
-export type IndexableCreatorSitemapEntry = {
+/**
+ * Raw creator candidates with per-locale public inventory.
+ * A locale is sitemap-eligible only when publicThemeCountByLocale[locale] > 0.
+ */
+export type CreatorSitemapCandidate = {
   handle: string;
   updatedAt: number;
+  publicThemeCountByLocale: Partial<Record<Locale, number>>;
 };
 
-export type IndexableTaxonomySitemapEntry = {
+/**
+ * Raw taxonomy candidates with translation coverage and per-locale inventory.
+ * Indexable only when the locale has a translation and publicThemeCount > 0.
+ */
+export type TaxonomySitemapCandidate = {
   dimension: string;
   key: string;
   updatedAt: number;
+  localesWithTranslation: Locale[];
+  publicThemeCountByLocale: Partial<Record<Locale, number>>;
 };
 
 export interface SeoRepository {
-  listIndexableThemes(): Promise<IndexableThemeSitemapEntry[]>;
-  listIndexableCreators(): Promise<IndexableCreatorSitemapEntry[]>;
-  listIndexableTaxonomies(): Promise<IndexableTaxonomySitemapEntry[]>;
+  /** Public-ready theme rows with translation status (no index-policy filtering). */
+  listThemeSitemapCandidates(): Promise<ThemeSitemapCandidate[]>;
+  /** Creators with at least one public-ready theme in some locale. */
+  listCreatorSitemapCandidates(): Promise<CreatorSitemapCandidate[]>;
+  /** Controlled taxonomies with translation + inventory metadata. */
+  listTaxonomySitemapCandidates(): Promise<TaxonomySitemapCandidate[]>;
 }
