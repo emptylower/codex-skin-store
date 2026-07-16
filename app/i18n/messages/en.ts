@@ -8,7 +8,23 @@ export const messages = {
     copyPrompt: "Copy Prompt",
   },
   filters: {
+    heading: "Filters",
     platform: "Platform",
+    mode: "Mode",
+    media: "Media",
+    sort: "Sort",
+    search: "Search",
+    any: "Any",
+    apply: "Apply filters",
+  },
+  marketplace: {
+    heading: "Codex theme marketplace",
+    lede: "Browse free community themes for Codex Desktop.",
+    description: "Discover and preview free Codex Desktop themes.",
+    simulator: "Codex simulator",
+    grid: "Themes",
+    empty: "No themes match these filters.",
+    filterError: "Some filter values are invalid. Adjust them and try again.",
   },
   preview: {
     home: "Home",
@@ -16,6 +32,9 @@ export const messages = {
   },
   theme: {
     related: "Related themes",
+    by: "by",
+    favorites: "Favorites",
+    downloads: "Downloads",
   },
   policy: {
     terms: "Terms of Service",
