@@ -41,6 +41,7 @@ export default defineConfig(async () => {
         "tests/integration/**/*.{ts,tsx}",
         "tests/routes/**/*.{ts,tsx}",
         "tests/seo/**/*.{ts,tsx}",
+        "tests/packages/**/*.{ts,tsx}",
       ],
       setupFiles: ["./test/apply-migrations.ts"],
     },
