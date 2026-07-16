@@ -12,8 +12,18 @@ export const MODERATION_TARGET_TYPES = [
   "user",
   "report",
   "copyright_claim",
+  "seo_landing",
 ] as const;
 export type ModerationTargetType = (typeof MODERATION_TARGET_TYPES)[number];
+
+export const COPYRIGHT_CLAIM_STATUSES = [
+  "open",
+  "needs_information",
+  "accepted",
+  "rejected",
+  "withdrawn",
+] as const;
+export type CopyrightClaimStatus = (typeof COPYRIGHT_CLAIM_STATUSES)[number];
 
 export const reports = sqliteTable("reports", {
   id: text("id").primaryKey(),
@@ -37,5 +47,31 @@ export const moderationActions = sqliteTable("moderation_actions", {
   reason: text("reason").notNull(),
   beforeJson: text("before_json").notNull(),
   afterJson: text("after_json").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const copyrightClaims = sqliteTable("copyright_claims", {
+  id: text("id").primaryKey(),
+  claimantEmail: text("claimant_email").notNull(),
+  claimantName: text("claimant_name").notNull(),
+  targetThemeId: text("target_theme_id").notNull(),
+  rightsBasis: text("rights_basis").notNull(),
+  statement: text("statement").notNull(),
+  signature: text("signature").notNull(),
+  status: text("status", { enum: COPYRIGHT_CLAIM_STATUSES }).notNull(),
+  assignedTo: text("assigned_to"),
+  createdAt: integer("created_at").notNull(),
+  resolvedAt: integer("resolved_at"),
+});
+
+export const copyrightEvidence = sqliteTable("copyright_evidence", {
+  id: text("id").primaryKey(),
+  claimId: text("claim_id")
+    .notNull()
+    .references(() => copyrightClaims.id),
+  objectKey: text("object_key").notNull(),
+  sha256: text("sha256").notNull(),
+  mediaType: text("media_type").notNull(),
+  byteSize: integer("byte_size").notNull(),
   createdAt: integer("created_at").notNull(),
 });
