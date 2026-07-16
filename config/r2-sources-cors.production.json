@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://codex-dream-skin.com",
+          "https://www.codex-dream-skin.com",
+          "https://codexdreamskin.org",
+          "https://www.codexdreamskin.org"
+        ],
+        "methods": [
+          "PUT",
+          "GET",
+          "HEAD"
+        ],
+        "headers": [
+          "content-type",
+          "x-amz-meta-upload-id",
+          "x-amz-meta-expected-bytes"
+        ]
+      },
+      "exposeHeaders": [
+        "ETag"
+      ],
+      "maxAgeSeconds": 600
+    }
+  ]
+}

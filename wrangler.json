@@ -3,14 +3,18 @@
   "name": "codex-skin-store",
   "main": "./workers/app.ts",
   "compatibility_date": "2026-07-16",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true
+  },
   "upload_source_maps": true,
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "codex-skin-store",
-      "database_id": "00000000-0000-0000-0000-000000000001",
+      "database_id": "691b5667-8401-4d6c-9d7a-3f8b3f58d71e",
       "migrations_dir": "migrations"
     }
   ],
@@ -28,7 +32,10 @@
   ],
   "queues": {
     "producers": [
-      { "binding": "PACKAGE_QUEUE", "queue": "codex-skin-store-packages" }
+      {
+        "binding": "PACKAGE_QUEUE",
+        "queue": "codex-skin-store-packages"
+      }
     ],
     "consumers": [
       {
@@ -41,12 +48,38 @@
       }
     ]
   },
-  "images": { "binding": "IMAGES" },
-  "triggers": { "crons": ["*/5 * * * *"] },
+  "images": {
+    "binding": "IMAGES"
+  },
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "codex-dream-skin.com/*",
+      "zone_name": "codex-dream-skin.com"
+    },
+    {
+      "pattern": "www.codex-dream-skin.com/*",
+      "zone_name": "codex-dream-skin.com"
+    },
+    {
+      "pattern": "codexdreamskin.org/*",
+      "zone_name": "codexdreamskin.org"
+    },
+    {
+      "pattern": "www.codexdreamskin.org/*",
+      "zone_name": "codexdreamskin.org"
+    }
+  ],
   "vars": {
-    "APP_ORIGIN": "http://localhost:5173",
+    "APP_ORIGIN": "https://codex-dream-skin.com",
     "DEFAULT_LOCALE": "en",
     "ENABLE_GIF_UPLOADS": "false",
-    "ZIP_WRITER": "fflate"
-  }
+    "ZIP_WRITER": "fflate",
+    "R2_ACCOUNT_ID": "aad30c50835253f7fd3d64368c77a8a1"
+  },
+  "workers_dev": true
 }

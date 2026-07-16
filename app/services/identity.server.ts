@@ -11,11 +11,37 @@ export type AuthInstance = ReturnType<typeof createAuth>;
  * Account linking requires verified matching emails; no trustedProviders.
  */
 export function createAuth(env: Env, origin: string) {
+  const socialProviders: NonNullable<
+    Parameters<typeof betterAuth>[0]["socialProviders"]
+  > = {};
+  const isConfigured = (value: string | undefined) =>
+    Boolean(value && value !== "placeholder-not-configured");
+
+  if (isConfigured(env.GOOGLE_CLIENT_ID) && isConfigured(env.GOOGLE_CLIENT_SECRET)) {
+    socialProviders.google = {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+  if (isConfigured(env.GITHUB_CLIENT_ID) && isConfigured(env.GITHUB_CLIENT_SECRET)) {
+    socialProviders.github = {
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+      scope: ["user:email"],
+    };
+  }
+
   return betterAuth({
     baseURL: origin,
     basePath: "/api/auth",
     secret: env.BETTER_AUTH_SECRET,
-    trustedOrigins: [origin],
+    trustedOrigins: [
+      origin,
+      "https://codex-dream-skin.com",
+      "https://www.codex-dream-skin.com",
+      "https://codexdreamskin.org",
+      "https://www.codexdreamskin.org",
+    ],
     database: drizzleAdapter(drizzle(env.DB, { schema }), {
       provider: "sqlite",
       schema,
@@ -79,17 +105,7 @@ export function createAuth(env: Env, origin: string) {
     verification: {
       modelName: "verifications",
     },
-    socialProviders: {
-      google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      },
-      github: {
-        clientId: env.GITHUB_CLIENT_ID,
-        clientSecret: env.GITHUB_CLIENT_SECRET,
-        scope: ["user:email"],
-      },
-    },
+    socialProviders,
   });
 }
 
