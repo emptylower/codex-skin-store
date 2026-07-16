@@ -20,7 +20,10 @@
     "test:e2e": "playwright test",
     "db:migrate:local": "wrangler d1 migrations apply codex-skin-store --local",
     "db:seed:local": "wrangler d1 execute codex-skin-store --local --file scripts/seed-local.sql",
-    "check:package": "tsx --tsconfig tsconfig.cloudflare.json scripts/check-package.ts"
+    "check:package": "tsx --tsconfig tsconfig.cloudflare.json scripts/check-package.ts",
+    "audit:seo-landings": "tsx --tsconfig tsconfig.cloudflare.json scripts/audit-seo-landings.ts",
+    "export:metrics": "tsx --tsconfig tsconfig.cloudflare.json scripts/export-metrics.ts",
+    "release:check": "tsx --tsconfig tsconfig.cloudflare.json scripts/release-check.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.6.23",
