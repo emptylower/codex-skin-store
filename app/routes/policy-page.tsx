@@ -110,6 +110,13 @@ export default function PolicyPage({ loaderData }: Route.ComponentProps) {
           <p key={index}>{paragraph}</p>
         ))}
       </div>
+      {loaderData.page === "copyright" ? (
+        <p className="policy-page__cta">
+          <a href={localePath(locale, "/copyright/report")}>
+            Submit a copyright report
+          </a>
+        </p>
+      ) : null}
     </main>
   );
 }

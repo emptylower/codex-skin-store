@@ -34,5 +34,6 @@ export default [
   route(":locale/copyright", "routes/policy-page.tsx", {
     id: "routes/copyright",
   }),
+  route(":locale/copyright/report", "routes/copyright-report.tsx"),
   route(":locale/about", "routes/policy-page.tsx", { id: "routes/about" }),
 ] satisfies RouteConfig;
