@@ -9,11 +9,16 @@ export default [
   route("api/uploads/complete", "routes/api.uploads.complete.ts"),
   route(":locale", "routes/marketplace.tsx"),
   route(":locale/themes/:slug", "routes/theme-detail.tsx"),
+  route(":locale/themes/:slug/edit", "routes/themes.$slug.edit.tsx"),
   route(":locale/creators/:handle", "routes/creator-profile.tsx"),
   route(":locale/taxonomies/:dimension/:key", "routes/taxonomy-hub.tsx"),
   route(":locale/auth/sign-in", "routes/auth.sign-in.tsx"),
   route(":locale/me/profile", "routes/me.profile.tsx"),
   route(":locale/upload", "routes/upload.tsx"),
+  route(
+    "api/creator-artifacts/:themeId/:version/:artifact",
+    "routes/api.creator-artifacts.$themeId.$version.$artifact.ts",
+  ),
   route(":locale/terms", "routes/policy-page.tsx", { id: "routes/terms" }),
   route(":locale/privacy", "routes/policy-page.tsx", { id: "routes/privacy" }),
   route(":locale/copyright", "routes/policy-page.tsx", {

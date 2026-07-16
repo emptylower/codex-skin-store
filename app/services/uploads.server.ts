@@ -116,8 +116,10 @@ export async function issueUpload(
   if (row.author_id !== input.userId) {
     throw new UploadError("forbidden");
   }
-  if (row.visibility !== "draft") {
-    throw new UploadError("invalid_state", "theme_not_draft");
+  // Draft, public, and unlisted themes may upload a new awaiting_upload version.
+  // Hidden themes cannot start uploads (moderation/admin control).
+  if (row.visibility === "hidden") {
+    throw new UploadError("invalid_state", "theme_hidden");
   }
 
   const existing = await deps.db
@@ -359,9 +361,10 @@ export async function completeUpload(
     await rejectAndDelete(deps, row.upload_id, row.quarantine_key, now);
     throw new UploadError("expired");
   }
-  if (row.visibility !== "draft") {
+  // Allow complete for draft/public/unlisted while a version is awaiting_upload.
+  if (row.visibility === "hidden") {
     await rejectAndDelete(deps, row.upload_id, row.quarantine_key, now);
-    throw new UploadError("invalid_state", "theme_not_draft");
+    throw new UploadError("invalid_state", "theme_hidden");
   }
   if (row.generation_state !== "awaiting_upload") {
     await rejectAndDelete(deps, row.upload_id, row.quarantine_key, now);
