@@ -1,3 +1,5 @@
+import type { ThemeVisibility } from "./state";
+
 const MAX_SLUG_LENGTH = 60;
 
 /**
@@ -25,7 +27,26 @@ export function normalizeSlug(input: string): string {
 }
 
 /**
+ * Build `base-n` while keeping the full candidate ≤ MAX_SLUG_LENGTH.
+ * Truncates the base (and trailing hyphens) when the suffix would overflow.
+ */
+function candidateWithSuffix(base: string, n: number): string {
+  const suffix = `-${n}`;
+  const maxBaseLength = MAX_SLUG_LENGTH - suffix.length;
+  const truncatedBase = base.slice(0, maxBaseLength).replace(/-+$/g, "");
+
+  if (!truncatedBase) {
+    throw new Error(
+      `Unable to fit unique slug suffix for base "${base}" within ${MAX_SLUG_LENGTH} characters`,
+    );
+  }
+
+  return `${truncatedBase}${suffix}`;
+}
+
+/**
  * Resolve a unique slug by trying `base`, then `base-2` … `base-99`.
+ * Suffixed candidates are truncated so the full slug never exceeds 60 chars.
  */
 export function resolveUniqueSlug(
   base: string,
@@ -36,7 +57,7 @@ export function resolveUniqueSlug(
   }
 
   for (let n = 2; n <= 99; n += 1) {
-    const candidate = `${base}-${n}`;
+    const candidate = candidateWithSuffix(base, n);
     if (!exists(candidate)) {
       return candidate;
     }
@@ -50,7 +71,7 @@ export function resolveUniqueSlug(
  * remains an unpublished draft (no version, visibility still draft).
  */
 export function canChangeSlug(theme: {
-  visibility: string;
+  visibility: ThemeVisibility;
   currentVersion: number | null;
 }): boolean {
   if (theme.currentVersion != null) {

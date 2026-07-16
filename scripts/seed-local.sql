@@ -72,8 +72,9 @@ VALUES
   ('tt-mood-calm-zh', 'tax-mood-calm', 'zh-hans', '平静', '["宁静","安静","平和"]', 1700000011000, 1700000011000),
   ('tt-mode-dark-en', 'tax-mode-dark', 'en', 'Dark', '["night","dim"]', 1700000011000, 1700000011000),
   ('tt-mode-dark-zh', 'tax-mode-dark', 'zh-hans', '深色', '["夜间","暗色"]', 1700000011000, 1700000011000),
-  ('tt-mode-light-en', 'tax-mode-light', 'en', 'Light', '["day","bright"]', 1700000011000, 1700000011000),
-  ('tt-mode-light-zh', 'tax-mode-light', 'zh-hans', '浅色', '["日间","明亮"]', 1700000011000, 1700000011000)
+  -- "bright"/"明亮" reserved for mood/energetic to avoid cross-dimension ambiguity.
+  ('tt-mode-light-en', 'tax-mode-light', 'en', 'Light', '["day"]', 1700000011000, 1700000011000),
+  ('tt-mode-light-zh', 'tax-mode-light', 'zh-hans', '浅色', '["日间"]', 1700000011000, 1700000011000)
 ON CONFLICT(id) DO UPDATE SET
   label = excluded.label,
   synonyms_json = excluded.synonyms_json,

@@ -25,6 +25,11 @@ describe("normalizeTaxonomyInput", () => {
     expect(normalizeTaxonomyInput("深色")).toBe("dark");
   });
 
+  it("maps bright to energetic only (not light mode)", () => {
+    expect(normalizeTaxonomyInput("bright")).toBe("energetic");
+    expect(normalizeTaxonomyInput("Bright")).toBe("energetic");
+  });
+
   it("normalizes whitespace and case for lookup", () => {
     expect(normalizeTaxonomyInput("  SCI   FI  ")).toBe("science-fiction");
     expect(normalizeTaxonomyInput("Deep Work")).toBe("focus");

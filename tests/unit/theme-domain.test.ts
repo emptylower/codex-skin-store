@@ -58,6 +58,30 @@ describe("resolveUniqueSlug", () => {
     );
   });
 
+  it("keeps suffixed candidates within 60 chars for a max-length base", () => {
+    const base = "a".repeat(60);
+    const taken = new Set([base]);
+    const resolved = resolveUniqueSlug(base, (slug) => taken.has(slug));
+
+    expect(resolved).toHaveLength(60);
+    expect(resolved.endsWith("-2")).toBe(true);
+    expect(resolved).toBe(`${"a".repeat(58)}-2`);
+  });
+
+  it("truncates base further for multi-digit suffixes near the length cap", () => {
+    const base = "b".repeat(60);
+    const taken = new Set([base]);
+    for (let n = 2; n <= 9; n += 1) {
+      const suffix = `-${n}`;
+      taken.add(`${"b".repeat(60 - suffix.length)}${suffix}`);
+    }
+    const resolved = resolveUniqueSlug(base, (slug) => taken.has(slug));
+
+    // "-10" is 3 chars → base truncated to 57 so total stays ≤ 60
+    expect(resolved).toHaveLength(60);
+    expect(resolved).toBe(`${"b".repeat(57)}-10`);
+  });
+
   it("throws after base-99 is exhausted", () => {
     const exists = (slug: string) =>
       slug === "taken" || /^taken-\d+$/.test(slug);

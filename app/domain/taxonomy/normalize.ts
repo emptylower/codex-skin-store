@@ -73,6 +73,8 @@ const SYNONYM_ENTRIES: ReadonlyArray<readonly [string, string]> = [
   ["居家", "cozy"],
 
   // mood: energetic
+  // "bright" is intentionally mood/energetic only (not mode/light) to avoid
+  // synonym ambiguity between dimensions.
   ["energetic", "energetic"],
   ["vivid", "energetic"],
   ["bold", "energetic"],
