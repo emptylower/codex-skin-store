@@ -68,4 +68,18 @@ describe("inspectMedia", () => {
       frames: 3,
     });
   });
+
+  it("stores objectBytes and ignores extra buffer capacity past the declared length", () => {
+    const image = png(64, 64);
+    const padded = new Uint8Array(image.length + 32);
+    padded.set(image);
+    const inspected = inspectMedia(padded, image.length);
+    expect(inspected.objectBytes).toBe(image.length);
+    expect(inspected).toMatchObject({
+      mime: "image/png",
+      width: 64,
+      height: 64,
+      mediaType: "static",
+    });
+  });
 });

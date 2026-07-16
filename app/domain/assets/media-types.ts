@@ -41,6 +41,8 @@ export type MediaInspection = {
   frames: number;
   mediaType: MediaType;
   kind: MediaKind;
+  /** Declared object length used for inspection; downstream must process only this many bytes. */
+  objectBytes: number;
 };
 
 export type FocalPoint = {

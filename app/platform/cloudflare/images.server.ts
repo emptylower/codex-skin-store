@@ -49,7 +49,11 @@ export async function prepareStaticMedia(
     throw new MediaError("decode_failed", "static_mime_not_supported");
   }
 
-  let prepared = bytes;
+  // Process only the declared object length (ignore accidental extra buffer capacity).
+  if (bytes.byteLength < inspection.objectBytes) {
+    throw new MediaError("decode_failed", "buffer_shorter_than_object");
+  }
+  let prepared = bytes.subarray(0, inspection.objectBytes);
   let preparedMime: MediaMime = inspection.mime;
   let preparedWidth = inspection.width;
   let preparedHeight = inspection.height;

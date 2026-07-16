@@ -73,6 +73,7 @@ export function inspectMedia(
     frames,
     mediaType: frames > 1 ? "animated" : "static",
     kind,
+    objectBytes,
   };
 }
 

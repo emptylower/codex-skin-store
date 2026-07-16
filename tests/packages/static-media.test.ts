@@ -101,13 +101,10 @@ describe("prepareStaticMedia", () => {
   it("re-encodes oversized sources via the photon port before Images", async () => {
     const bytes = png(640, 480);
     const inspected = inspectMedia(bytes, bytes.length);
-    // Pretend source is above the 16 MB prepared limit.
-    const largeDeclared = new Uint8Array(16_000_001);
-    largeDeclared.set(bytes.subarray(0, Math.min(bytes.length, 64)));
+    // Force large path via declared objectBytes (not accidental buffer capacity).
+    const huge = new Uint8Array(16_000_001);
+    huge.set(bytes);
 
-    // Use real small bytes but force photon path via options / size check on inspected path:
-    // prepareStaticMedia uses bytes.byteLength for size decisions.
-    // Build a stub reencode that returns a small webp-like buffer.
     const reencoded = webp(640, 480);
     const reencodeLargeSource = vi.fn(async () => reencoded);
     const images = createMockImages({
@@ -116,22 +113,45 @@ describe("prepareStaticMedia", () => {
       infoHeight: 480,
     });
 
-    // Force large path by wrapping: prepareStaticMedia checks bytes.length.
-    // Construct a large buffer that still passes inspect when using original inspection
-    // of a valid small image — prepare assumes inspect already ran.
-    const huge = new Uint8Array(16_000_001);
-    huge.set(bytes);
-
     const result = await prepareStaticMedia(
       { images, reencodeLargeSource },
       huge,
-      { ...inspected, width: 640, height: 480, mime: "image/png" },
+      {
+        ...inspected,
+        width: 640,
+        height: 480,
+        mime: "image/png",
+        objectBytes: 16_000_001,
+      },
       { focal: { x: 0.5, y: 0.5 } },
     );
 
     expect(reencodeLargeSource).toHaveBeenCalled();
     expect(result.background.mime).toBe("image/webp");
     expect(result.background.bytes.byteLength).toBe(reencoded.byteLength);
+  });
+
+  it("processes only inspection.objectBytes when the buffer is larger", async () => {
+    const bytes = png(320, 240);
+    const inspected = inspectMedia(bytes, bytes.length);
+    const padded = new Uint8Array(bytes.length + 4096);
+    padded.set(bytes);
+    const images = createMockImages({
+      infoFormat: "image/png",
+      infoWidth: 320,
+      infoHeight: 240,
+    });
+
+    const result = await prepareStaticMedia(
+      { images, reencodeLargeSource: null },
+      padded,
+      inspected,
+      { focal: { x: 0.5, y: 0.5 } },
+    );
+
+    expect(result.background.bytes.byteLength).toBe(inspected.objectBytes);
+    expect(result.background.bytes.byteLength).toBe(bytes.byteLength);
+    expect(images.info).toHaveBeenCalledOnce();
   });
 
   it("rejects when Images reports SVG or dimension mismatch", async () => {
