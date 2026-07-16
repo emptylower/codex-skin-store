@@ -25,6 +25,8 @@ export default [
   route(":locale/admin/reports", "routes/admin.reports.tsx"),
   route(":locale/admin/theme", "routes/admin.theme.tsx"),
   route(":locale/admin/user", "routes/admin.user.tsx"),
+  route(":locale/admin/seo-landings", "routes/admin.seo-landings.tsx"),
+  route(":locale/l/:slug", "routes/seo-landing.tsx"),
   route(
     "api/creator-artifacts/:themeId/:version/:artifact",
     "routes/api.creator-artifacts.$themeId.$version.$artifact.ts",
