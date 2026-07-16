@@ -149,6 +149,11 @@ export default function ProfilePage({
         <button type="submit">Save profile</button>
       </Form>
       <p>
+        <a href={localePath(locale, "/me/favorites")}>My favorites</a>
+        {" · "}
+        <a href={localePath(locale, "/me/delete-account")}>Delete account</a>
+      </p>
+      <p>
         <a href={localePath(locale)}>Back to marketplace</a>
       </p>
     </main>
