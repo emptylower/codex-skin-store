@@ -58,7 +58,16 @@ export type ThemeDetail = ThemeListItem & {
   sourceLocale: Locale;
   currentVersion: number | null;
   packageKey: string | null;
+  payloadDigest: string | null;
+  archiveDigest: string | null;
+  packageStatus: "processing" | "ready" | "failed";
   manifest: Record<string, unknown>;
+};
+
+export type TaxonomyHubRecord = {
+  dimension: string;
+  key: string;
+  label: string;
 };
 
 export type CreatorProfile = {

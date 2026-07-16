@@ -48,11 +48,48 @@ export const messages = {
     by: "作者",
     favorites: "收藏",
     downloads: "下载",
+    overview: "概览",
+    facts: "主题信息",
+    description: "描述",
+    compatibility: "兼容性",
+    license: "许可",
+    licenseFallback: "见安装包",
+    version: "版本",
+    package: "安装包概览",
+    packageStatus: "状态",
+    packageReady: "就绪",
+    packageKey: "安装包键",
+    payloadDigest: "内容摘要",
+    archiveDigest: "压缩包摘要",
+    palette: "配色",
+    focal: "焦点",
+    author: "作者",
+    installPrerequisites:
+      "需要 Codex Desktop。认证下载能力就绪后，可从安装包完成安装。",
+  },
+  creator: {
+    themes: "公开主题",
+    empty: "该创作者暂无公开主题。",
+  },
+  taxonomy: {
+    themes: "主题",
+    empty: "暂无使用该分类的主题。",
+  },
+  breadcrumbs: {
+    home: "首页",
   },
   policy: {
     terms: "服务条款",
+    termsBody:
+      "Codex Skin Store 是面向 Codex Desktop 的免费社区主题市场。使用本站即表示你承诺仅发布有权发布的内容，尊重其他创作者，并接受出于安全、版权或政策原因的审核与下架。本里程碑不售卖主题安装包。",
     privacy: "隐私政策",
+    privacyBody:
+      "我们仅处理运营双语公开市场所需的最少数据：主题目录内容、公开创作者资料，以及安全与可靠性所需的技术日志。请勿在主题资源或描述中上传个人敏感信息。如需处理数据相关请求，请联系运营方。",
     copyright: "版权声明",
+    copyrightBody:
+      "创作者保留其原创主题资源与清单的权利。请勿上传无权使用的材料。可通过站点版权流程提交版权问题。侵权主题可被移除，相关账号可能受到限制。",
     about: "关于",
+    aboutBody:
+      "Codex Skin Store 帮助用户发现并预览面向 Codex Desktop 的免费社区主题。公开市场支持英语与简体中文，强调透明的主题信息、受控分类与可抓取页面。",
   },
 } as const satisfies Messages;

@@ -7,6 +7,7 @@ import {
   themeVersions,
   themes,
   taxonomies,
+  taxonomyTranslations,
   users,
 } from "~/db/schema";
 import { normalizeTaxonomyInput } from "~/domain/taxonomy/normalize";
@@ -19,6 +20,7 @@ import type {
   MarketplaceMedia,
   MarketplaceMode,
   MarketplacePlatform,
+  TaxonomyHubRecord,
   ThemeDetail,
   ThemeListItem,
   ThemeListResult,
@@ -245,7 +247,41 @@ export class CloudflareMarketplaceRepository implements MarketplaceRepository {
       sourceLocale: row.theme.sourceLocale,
       currentVersion: row.theme.currentVersion,
       packageKey: row.version.packageKey,
+      payloadDigest: row.version.payloadDigest,
+      archiveDigest: row.version.archiveDigest,
+      packageStatus: row.theme.packageStatus,
       manifest: manifest.raw,
+    };
+  }
+
+  async findTaxonomy(
+    dimension: string,
+    key: string,
+    locale: Locale,
+  ): Promise<TaxonomyHubRecord | null> {
+    const rows = await this.db
+      .select({
+        dimension: taxonomies.dimension,
+        key: taxonomies.key,
+        label: taxonomyTranslations.label,
+      })
+      .from(taxonomies)
+      .innerJoin(
+        taxonomyTranslations,
+        and(
+          eq(taxonomyTranslations.taxonomyId, taxonomies.id),
+          eq(taxonomyTranslations.locale, locale),
+        ),
+      )
+      .where(and(eq(taxonomies.dimension, dimension as never), eq(taxonomies.key, key)))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      dimension: row.dimension,
+      key: row.key,
+      label: row.label,
     };
   }
 

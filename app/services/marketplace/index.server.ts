@@ -7,6 +7,7 @@ import { getRelatedThemes } from "./related-themes.server";
 import type {
   CreatorProfile,
   MarketplaceFilters,
+  TaxonomyHubRecord,
   ThemeDetail,
   ThemeListItem,
   ThemeListResult,
@@ -24,6 +25,11 @@ export type MarketplaceService = {
     locale: Locale,
     limit?: number,
   ): Promise<ThemeListItem[]>;
+  getTaxonomy(
+    dimension: string,
+    key: string,
+    locale: Locale,
+  ): Promise<TaxonomyHubRecord | null>;
 };
 
 export function createMarketplaceService(
@@ -35,5 +41,7 @@ export function createMarketplaceService(
     getCreator: (handle, locale) => getCreator(repo, handle, locale),
     getRelatedThemes: (slug, locale, limit) =>
       getRelatedThemes(repo, slug, locale, limit),
+    getTaxonomy: (dimension, key, locale) =>
+      repo.findTaxonomy(dimension, key, locale),
   };
 }

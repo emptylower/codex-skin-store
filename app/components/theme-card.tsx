@@ -1,4 +1,5 @@
 import type { Locale } from "~/i18n/config";
+import { localePath } from "~/i18n/config";
 import type { Messages } from "~/i18n/messages";
 import type { ThemeListItem } from "~/services/marketplace/types";
 import { safeMediaUrl } from "~/utils/safe-media-url";
@@ -28,9 +29,44 @@ export function ThemeCard({
   locale,
 }: ThemeCardProps) {
   const mediaSrc = safeMediaUrl(theme.previewImage ?? theme.coverImage);
+  const href = locale
+    ? localePath(locale, `/themes/${theme.slug}`)
+    : undefined;
 
   return (
     <article className="theme-card" data-testid="theme-card">
+      {href ? (
+        <a href={href} className="theme-card__link">
+          <ThemeCardBody
+            theme={theme}
+            labels={labels}
+            filterLabels={filterLabels}
+            locale={locale}
+            mediaSrc={mediaSrc}
+          />
+        </a>
+      ) : (
+        <ThemeCardBody
+          theme={theme}
+          labels={labels}
+          filterLabels={filterLabels}
+          locale={locale}
+          mediaSrc={mediaSrc}
+        />
+      )}
+    </article>
+  );
+}
+
+function ThemeCardBody({
+  theme,
+  labels,
+  filterLabels,
+  locale,
+  mediaSrc,
+}: ThemeCardProps & { mediaSrc: string | null }) {
+  return (
+    <>
       <div className="theme-card__media" style={{ aspectRatio: "16 / 10" }}>
         {mediaSrc ? (
           <img
@@ -73,6 +109,6 @@ export function ThemeCard({
           </span>
         </p>
       </div>
-    </article>
+    </>
   );
 }

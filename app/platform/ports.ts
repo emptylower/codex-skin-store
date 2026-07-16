@@ -2,6 +2,7 @@ import type { Locale } from "~/i18n/config";
 import type {
   CreatorProfile,
   MarketplaceFilters,
+  TaxonomyHubRecord,
   ThemeDetail,
   ThemeListItem,
   ThemeListResult,
@@ -22,4 +23,10 @@ export interface MarketplaceRepository {
     locale: Locale,
     limit?: number,
   ): Promise<ThemeListItem[]>;
+
+  findTaxonomy(
+    dimension: string,
+    key: string,
+    locale: Locale,
+  ): Promise<TaxonomyHubRecord | null>;
 }
