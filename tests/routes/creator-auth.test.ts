@@ -1,6 +1,7 @@
+import { createElement } from "react";
 import { env } from "cloudflare:workers";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { action as authAction, loader as authLoader } from "~/routes/api.auth";
 import SignIn, { loader as signInLoader } from "~/routes/auth.sign-in";
@@ -8,6 +9,7 @@ import Profile, {
   action as profileAction,
   loader as profileLoader,
 } from "~/routes/me.profile";
+import * as identity from "~/services/identity.server";
 
 function cloudflareContext() {
   return {
@@ -21,8 +23,12 @@ function cloudflareContext() {
   };
 }
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("creator auth routes", () => {
-  it("renders Google and GitHub OAuth sign-in URLs", async () => {
+  it("renders Google and GitHub OAuth sign-in as POST forms", async () => {
     const request = new Request("https://store.test/en/auth/sign-in");
     const data = await signInLoader({
       request,
@@ -33,11 +39,19 @@ describe("creator auth routes", () => {
     } as never);
 
     const html = renderToStaticMarkup(
-      SignIn({ loaderData: data, params: { locale: "en" } } as never),
+      createElement(SignIn, {
+        loaderData: data,
+        params: { locale: "en" },
+      } as never),
     );
 
-    expect(html).toContain("/api/auth/sign-in/social?provider=google");
-    expect(html).toContain("/api/auth/sign-in/social?provider=github");
+    expect(html).toContain('method="post"');
+    expect(html).toContain('action="/api/auth/sign-in/social"');
+    expect(html).toContain('name="provider"');
+    expect(html).toContain('value="google"');
+    expect(html).toContain('value="github"');
+    expect(html).toContain('name="callbackURL"');
+    expect(html).toContain('value="/en"');
     expect(html.toLowerCase()).toContain("google");
     expect(html.toLowerCase()).toContain("github");
   });
@@ -52,23 +66,18 @@ describe("creator auth routes", () => {
       headers,
     });
 
-    const createAuth = await import("~/services/identity.server").then(
-      (mod) => mod.createAuth,
-    );
-    const auth = createAuth(env, "https://store.test");
-    const handlerSpy = vi
-      .spyOn(auth, "handler")
-      .mockResolvedValue(handlerResponse);
+    const realCreateAuth = identity.createAuth;
+    vi.spyOn(identity, "createAuth").mockImplementation((envArg, origin) => {
+      const auth = realCreateAuth(envArg, origin);
+      return Object.assign(auth, {
+        handler: vi.fn().mockResolvedValue(handlerResponse),
+      });
+    });
 
-    // Re-bind createAuth for this request path by patching module usage is hard;
-    // instead call the route handlers against a real createAuth and assert that
-    // whatever Response they return preserves multi-value Set-Cookie when the
-    // underlying handler does. We stub by wrapping env path via direct handler.
     const request = new Request("https://store.test/api/auth/get-session", {
       method: "GET",
     });
 
-    // Direct contract: loader/action return auth.handler(request) as-is.
     const loaderResult = await authLoader({
       request,
       params: {},
@@ -77,17 +86,11 @@ describe("creator auth routes", () => {
       unstable_url: new URL(request.url),
     } as never);
 
-    // If the real handler ran (no spy on route-local instance), still assert
-    // multi-cookie preservation using a synthetic Response path.
-    if (loaderResult instanceof Response) {
-      // Build the expected preservation check against a synthetic multi-cookie
-      // response equal to what better-auth emits.
-      const preserved = new Response(handlerResponse.body, handlerResponse);
-      expect(preserved.headers.getSetCookie()).toEqual([
-        "session_token=abc; Path=/; HttpOnly",
-        "session_data=xyz; Path=/; HttpOnly",
-      ]);
-    }
+    expect(loaderResult).toBeInstanceOf(Response);
+    expect((loaderResult as Response).headers.getSetCookie()).toEqual([
+      "session_token=abc; Path=/; HttpOnly",
+      "session_data=xyz; Path=/; HttpOnly",
+    ]);
 
     const actionRequest = new Request(
       "https://store.test/api/auth/sign-in/social",
@@ -101,11 +104,13 @@ describe("creator auth routes", () => {
       unstable_url: new URL(actionRequest.url),
     } as never);
     expect(actionResult).toBeInstanceOf(Response);
-
-    handlerSpy.mockRestore();
+    expect((actionResult as Response).headers.getSetCookie()).toEqual([
+      "session_token=abc; Path=/; HttpOnly",
+      "session_data=xyz; Path=/; HttpOnly",
+    ]);
   });
 
-  it("requires authentication for the profile page", async () => {
+  it("redirects unauthenticated profile page visitors to sign-in", async () => {
     const request = new Request("https://store.test/en/me/profile");
     await expect(
       profileLoader({
@@ -116,7 +121,10 @@ describe("creator auth routes", () => {
         unstable_url: new URL(request.url),
       } as never),
     ).rejects.toSatisfy((error: unknown) => {
-      return error instanceof Response && error.status === 401;
+      if (!(error instanceof Response)) return false;
+      if (error.status !== 302 && error.status !== 303) return false;
+      const location = error.headers.get("Location") ?? "";
+      return location.endsWith("/en/auth/sign-in");
     });
   });
 

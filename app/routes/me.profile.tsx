@@ -29,7 +29,17 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const user = await requireUser(request, context.cloudflare.env);
+  let user: Awaited<ReturnType<typeof requireUser>>;
+  try {
+    user = await requireUser(request, context.cloudflare.env);
+  } catch (error) {
+    // HTML profile page should send anonymous visitors to sign-in.
+    if (error instanceof Response && error.status === 401) {
+      throw redirect(localePath(locale, "/auth/sign-in"));
+    }
+    throw error;
+  }
+
   const profile = await getProfile(context.cloudflare.env.DB, user.id);
   if (!profile) {
     throw new Response("Profile not found", { status: 404 });

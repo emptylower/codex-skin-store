@@ -139,18 +139,24 @@ export class CloudflareSeoRepository implements SeoRepository {
     for (const row of rows) {
       if (row.themeCount <= 0) continue;
 
+      // users.updatedAt uses integer mode timestamp_ms (Date); themes stay number ms.
+      const userUpdatedAtMs =
+        row.userUpdatedAt instanceof Date
+          ? row.userUpdatedAt.getTime()
+          : Number(row.userUpdatedAt);
+
       const existing = byHandle.get(row.handle);
       if (existing) {
         existing.publicThemeCountByLocale[row.locale] = row.themeCount;
         existing.updatedAt = Math.max(
           existing.updatedAt,
-          row.userUpdatedAt,
+          userUpdatedAtMs,
           row.latestThemeUpdate || 0,
         );
       } else {
         byHandle.set(row.handle, {
           handle: row.handle,
-          updatedAt: Math.max(row.userUpdatedAt, row.latestThemeUpdate || 0),
+          updatedAt: Math.max(userUpdatedAtMs, row.latestThemeUpdate || 0),
           publicThemeCountByLocale: {
             [row.locale]: row.themeCount,
           },

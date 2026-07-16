@@ -27,10 +27,10 @@ export const users = sqliteTable("users", {
   })
     .notNull()
     .default("active"),
-  // Plain unix-ms integers so marketplace/SEO numeric sorts stay stable.
-  // Better Auth still accepts numeric timestamps for these core fields.
-  createdAt: integer("created_at").notNull(),
-  updatedAt: integer("updated_at").notNull(),
+  // timestamp_ms matches sessions/accounts and Better Auth date fields.
+  // Storage remains unix-ms integers; Drizzle maps Date <-> number for BA.
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 export const accounts = sqliteTable(

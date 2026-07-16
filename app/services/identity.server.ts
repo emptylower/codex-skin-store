@@ -33,7 +33,8 @@ export function createAuth(env: Env, origin: string) {
           type: "string",
           required: true,
           input: false,
-          defaultValue: () => `user-${crypto.randomUUID().slice(0, 8)}`,
+          defaultValue: () =>
+            `user-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`,
         },
         bio: {
           type: "string",
