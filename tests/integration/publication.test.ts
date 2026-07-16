@@ -292,13 +292,16 @@ describe("theme publication lifecycle", () => {
     ).rejects.toMatchObject({ code: "package_head_mismatch" });
 
     // Wrong digests in HEAD also fail.
-    packages.store.set(`themes/${draft.themeId}/versions/1/generated/theme.zip`, {
-      size: 10,
-      customMetadata: {
-        "payload-digest": "wrong",
-        "archive-digest": "wrong",
+    packages.store.set(
+      `themes/${draft.themeId}/versions/1/generated/theme.zip`,
+      {
+        size: 10,
+        customMetadata: {
+          "payload-digest": "wrong",
+          "archive-digest": "wrong",
+        },
       },
-    });
+    );
     await expect(
       publishTheme(deps, {
         userId: "u1",

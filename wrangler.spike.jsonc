@@ -11,15 +11,15 @@
   "vars": {
     // Conservative defaults until the deployed OS matrix gate passes.
     "ENABLE_GIF_UPLOADS": "false",
-    "ZIP_WRITER": "fflate"
+    "ZIP_WRITER": "fflate",
   },
   "env": {
     "staging": {
       "name": "codex-skin-store-pipeline-spike-staging",
       "vars": {
         "ENABLE_GIF_UPLOADS": "false",
-        "ZIP_WRITER": "fflate"
-      }
-    }
-  }
+        "ZIP_WRITER": "fflate",
+      },
+    },
+  },
 }

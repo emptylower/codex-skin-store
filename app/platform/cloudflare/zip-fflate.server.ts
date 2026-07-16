@@ -22,10 +22,7 @@ async function bodyToUint8Array(body: ZipEntryBody): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
-async function pumpStoreEntries(
-  zip: Zip,
-  entries: ZipEntry[],
-): Promise<void> {
+async function pumpStoreEntries(zip: Zip, entries: ZipEntry[]): Promise<void> {
   for (const entry of entries) {
     const name = entryName(entry);
     const file = new ZipPassThrough(name);

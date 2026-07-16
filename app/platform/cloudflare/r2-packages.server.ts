@@ -182,7 +182,11 @@ export async function writeAndPromoteZip(
   // Copy to final key (R2 copy when available; otherwise put bytes).
   const stagedBody = await input.bucket.get(stagingKey);
   if (!stagedBody) {
-    throw new PackageError("artifact_verification_failed", true, "staging_gone");
+    throw new PackageError(
+      "artifact_verification_failed",
+      true,
+      "staging_gone",
+    );
   }
   const finalBytes = new Uint8Array(await stagedBody.arrayBuffer());
 

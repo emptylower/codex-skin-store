@@ -177,14 +177,7 @@ export async function issueUpload(
              created_at = ?
          WHERE id = ? AND state = 'issued'`,
       )
-      .bind(
-        key,
-        input.contentType,
-        input.bytes,
-        expiresAt,
-        now,
-        uploadId,
-      )
+      .bind(key, input.contentType, input.bytes, expiresAt, now, uploadId)
       .run();
 
     if (updateResult.meta.changes !== 1) {
@@ -378,9 +371,7 @@ export async function completeUpload(
   }
 
   const metaUploadId =
-    head.customMetadata["upload-id"] ??
-    head.customMetadata["upload_id"] ??
-    "";
+    head.customMetadata["upload-id"] ?? head.customMetadata["upload_id"] ?? "";
   const metaExpected =
     head.customMetadata["expected-bytes"] ??
     head.customMetadata["expected_bytes"] ??
@@ -394,9 +385,7 @@ export async function completeUpload(
 
   if (!sizeOk || !metaOk || !head.etag) {
     await rejectAndDelete(deps, row.upload_id, row.quarantine_key, now);
-    throw new UploadError(
-      !sizeOk ? "size_mismatch" : "metadata_mismatch",
-    );
+    throw new UploadError(!sizeOk ? "size_mismatch" : "metadata_mismatch");
   }
 
   // Mark upload completed and advance generation state; only the winner proceeds.

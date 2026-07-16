@@ -69,7 +69,9 @@ export function assertSafePackagePath(path: string): void {
   }
 }
 
-export async function sha256Hex(data: Uint8Array | ArrayBuffer): Promise<string> {
+export async function sha256Hex(
+  data: Uint8Array | ArrayBuffer,
+): Promise<string> {
   const buffer =
     data instanceof ArrayBuffer
       ? data

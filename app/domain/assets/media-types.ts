@@ -1,10 +1,6 @@
 export type MediaKind = "png" | "jpeg" | "webp" | "gif";
 
-export type MediaMime =
-  | "image/png"
-  | "image/jpeg"
-  | "image/webp"
-  | "image/gif";
+export type MediaMime = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
 
 export type MediaExtension = "png" | "jpg" | "webp" | "gif";
 

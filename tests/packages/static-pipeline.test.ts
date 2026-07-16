@@ -128,11 +128,7 @@ function createMemoryBucket() {
       } else if (value instanceof ArrayBuffer) {
         body = new Uint8Array(value);
       } else if (ArrayBuffer.isView(value)) {
-        body = new Uint8Array(
-          value.buffer,
-          value.byteOffset,
-          value.byteLength,
-        );
+        body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
       } else if (value instanceof Blob) {
         body = new Uint8Array(await value.arrayBuffer());
       } else {

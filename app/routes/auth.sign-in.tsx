@@ -80,8 +80,7 @@ async function startSocialSignIn(
   }
 
   throw new Error(
-    payload?.message ||
-      `Sign-in with ${provider} failed (${response.status})`,
+    payload?.message || `Sign-in with ${provider} failed (${response.status})`,
   );
 }
 
@@ -104,7 +103,9 @@ export default function SignIn({ loaderData }: Route.ComponentProps) {
   return (
     <main className="auth-sign-in">
       <h1>{title}</h1>
-      <p>Continue with a trusted OAuth provider to create or open your profile.</p>
+      <p>
+        Continue with a trusted OAuth provider to create or open your profile.
+      </p>
       {error ? <p role="alert">{error}</p> : null}
       <ul className="auth-providers">
         <li>

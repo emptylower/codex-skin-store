@@ -61,7 +61,10 @@ export function inspectMedia(
 
   const frames = kind === "gif" ? countGifFrames(view) : 1;
   if (frames < 1) throw new MediaError("container_malformed", "gif_no_frames");
-  if (frames > MAX_GIF_FRAMES || width * height * frames > MAX_GIF_PIXEL_FRAMES) {
+  if (
+    frames > MAX_GIF_FRAMES ||
+    width * height * frames > MAX_GIF_PIXEL_FRAMES
+  ) {
     throw new MediaError("gif_frame_limit");
   }
 

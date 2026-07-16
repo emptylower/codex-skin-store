@@ -41,9 +41,9 @@ describe("inspectMedia", () => {
     expect(() => inspectMedia(new Uint8Array(0), 0)).toThrowError(
       expect.objectContaining({ code: "source_empty" }),
     );
-    expect(() =>
-      inspectMedia(png(10, 10), 25_000_001),
-    ).toThrowError(expect.objectContaining({ code: "source_too_large" }));
+    expect(() => inspectMedia(png(10, 10), 25_000_001)).toThrowError(
+      expect.objectContaining({ code: "source_too_large" }),
+    );
   });
 
   it("rejects dimensions above the per-side cap", () => {

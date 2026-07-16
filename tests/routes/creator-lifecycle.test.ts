@@ -15,9 +15,7 @@ import {
   loader as editLoader,
   default as EditThemePage,
 } from "~/routes/themes.$slug.edit";
-import {
-  loader as artifactLoader,
-} from "~/routes/api.creator-artifacts.$themeId.$version.$artifact";
+import { loader as artifactLoader } from "~/routes/api.creator-artifacts.$themeId.$version.$artifact";
 
 const NOW = 1_700_610_000_000;
 

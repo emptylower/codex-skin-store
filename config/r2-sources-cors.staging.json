@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://REPLACE_WITH_STAGING_APP_ORIGIN",
+          "https://REPLACE_WITH_PRODUCTION_APP_ORIGIN"
+        ],
+        "methods": ["PUT"],
+        "headers": [
+          "Content-Type",
+          "x-amz-meta-upload-id",
+          "x-amz-meta-expected-bytes"
+        ]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 600
+    }
+  ]
+}

@@ -19,7 +19,10 @@ function textBytes(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
-function packageEntries(): { artifacts: Array<{ path: string; size: number; bytes: Uint8Array }>; zipEntries: ZipEntry[] } {
+function packageEntries(): {
+  artifacts: Array<{ path: string; size: number; bytes: Uint8Array }>;
+  zipEntries: ZipEntry[];
+} {
   const files = [
     { path: "manifest.json", text: '{"schemaVersion":1,"id":"theme-1"}' },
     { path: "preview.jpg", text: "JPEG-BYTES" },

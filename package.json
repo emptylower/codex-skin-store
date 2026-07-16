@@ -15,6 +15,7 @@
     "test": "npm run test:unit && npm run test:workers",
     "test:unit": "vitest run --config vitest.config.ts",
     "test:workers": "vitest run --config vitest.workers.config.ts",
+    "test:packages": "vitest run --config vitest.workers.config.ts tests/packages",
     "test:watch": "vitest --config vitest.config.ts",
     "test:e2e": "playwright test",
     "db:migrate:local": "wrangler d1 migrations apply codex-skin-store --local",

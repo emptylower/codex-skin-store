@@ -23,10 +23,7 @@ import {
 } from "~/domain/themes/package-inventory";
 import { manifestV1Schema } from "~/domain/themes/manifest-v1";
 import { INSTALL_PROHIBITION } from "~/domain/themes/install-prompt-v1";
-import {
-  MACOS_TARGET,
-  WINDOWS_TARGET,
-} from "~/domain/themes/compatibility";
+import { MACOS_TARGET, WINDOWS_TARGET } from "~/domain/themes/compatibility";
 
 type Expected = {
   payloadDigest?: string;
@@ -188,9 +185,7 @@ export async function checkPackageBytes(
     const raw = JSON.parse(new TextDecoder().decode(files["manifest.json"]));
     manifest = manifestV1Schema.parse(raw);
   } catch (err) {
-    fail(
-      `manifest_schema:${err instanceof Error ? err.message : String(err)}`,
-    );
+    fail(`manifest_schema:${err instanceof Error ? err.message : String(err)}`);
   }
 
   const selected = expected?.platforms ?? manifest.platforms;

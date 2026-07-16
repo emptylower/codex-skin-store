@@ -28,6 +28,28 @@ export function meta({ data }: Route.MetaArgs) {
   ];
 }
 
+const STATIC_ACCEPT = "image/png,image/jpeg,image/webp";
+const GIF_ACCEPT = "image/gif";
+
+function gifUploadsEnabled(env: Env): boolean {
+  // wrangler types pin the default literal ("false"); runtime vars may change.
+  return String(env.ENABLE_GIF_UPLOADS) === "true";
+}
+
+/** GIF is only allowed when the feature flag is on and platforms are Windows-only. */
+function allowGifForPlatforms(
+  enableGifUploads: boolean,
+  platforms: readonly string[],
+): boolean {
+  return (
+    enableGifUploads && platforms.length === 1 && platforms[0] === "windows"
+  );
+}
+
+function acceptForMedia(allowGif: boolean): string {
+  return allowGif ? `${STATIC_ACCEPT},${GIF_ACCEPT}` : STATIC_ACCEPT;
+}
+
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const locale = parseLocale(params.locale ?? "");
   if (!locale) {
@@ -52,11 +74,13 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   return {
     ...localeData,
     title: messages.nav.upload,
+    enableGifUploads: gifUploadsEnabled(context.cloudflare.env),
     error: null as string | null,
     draft: null as null | {
       themeId: string;
       version: number;
       slug: string;
+      platforms: string[];
     },
   };
 }
@@ -64,7 +88,9 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 function formToCreatorInput(form: FormData) {
   const platforms = form.getAll("platforms").map(String);
   const compatibilityTargets = form.getAll("compatibilityTargets").map(String);
-  const rights = form.get("rightsDeclared") === "true" || form.get("rightsDeclared") === "on";
+  const rights =
+    form.get("rightsDeclared") === "true" ||
+    form.get("rightsDeclared") === "on";
 
   return {
     sourceLocale: String(form.get("sourceLocale") ?? "en"),
@@ -99,6 +125,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const form = await request.formData();
   const raw = formToCreatorInput(form);
   const messages = getMessages(locale);
+  const enableGifUploads = gifUploadsEnabled(context.cloudflare.env);
 
   const parsed = creatorInputSchema.safeParse(raw);
   if (!parsed.success) {
@@ -106,6 +133,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       locale,
       htmlLang: htmlLang(locale),
       title: messages.nav.upload,
+      enableGifUploads,
       error: parsed.error.issues[0]?.message ?? "invalid_input",
       draft: null,
     };
@@ -120,11 +148,13 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       locale,
       htmlLang: htmlLang(locale),
       title: messages.nav.upload,
+      enableGifUploads,
       error: null,
       draft: {
         themeId: draft.themeId,
         version: draft.version,
         slug: draft.slug,
+        platforms: [...parsed.data.platforms],
       },
     };
   } catch (error) {
@@ -133,6 +163,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         locale,
         htmlLang: htmlLang(locale),
         title: messages.nav.upload,
+        enableGifUploads,
         error: error.code,
         draft: null,
       };
@@ -163,7 +194,7 @@ export default function UploadPage({
   actionData,
 }: Route.ComponentProps) {
   const data = actionData ?? loaderData;
-  const { title, error, draft, locale } = data;
+  const { title, error, draft, locale, enableGifUploads } = data;
   const navigation = useNavigation();
   const busy = navigation.state !== "idle";
 
@@ -171,9 +202,40 @@ export default function UploadPage({
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const gifAllowed = allowGifForPlatforms(
+    enableGifUploads,
+    draft?.platforms ?? [],
+  );
+  const mediaAccept = acceptForMedia(gifAllowed);
+  const mediaLabel = gifAllowed
+    ? "Background image (PNG, JPEG, WebP, or GIF)"
+    : "Background image (PNG, JPEG, or WebP)";
+  const mediaHint = gifAllowed
+    ? "Select a PNG, JPEG, WebP, or GIF image after creating a draft."
+    : "Select a PNG, JPEG, or WebP image after creating a draft.";
+
+  function isAcceptedMediaType(type: string): boolean {
+    if (
+      type === "image/png" ||
+      type === "image/jpeg" ||
+      type === "image/webp"
+    ) {
+      return true;
+    }
+    return gifAllowed && type === "image/gif";
+  }
+
   async function handleDirectUpload() {
     if (!draft || !file) {
-      setUploadStatus("Select a PNG, JPEG, or WebP image after creating a draft.");
+      setUploadStatus(mediaHint);
+      return;
+    }
+    if (!isAcceptedMediaType(file.type)) {
+      setUploadStatus(
+        gifAllowed
+          ? "Only PNG, JPEG, WebP, or GIF is allowed for this draft."
+          : "Only PNG, JPEG, or WebP is allowed (GIF requires ENABLE_GIF_UPLOADS and Windows-only platforms).",
+      );
       return;
     }
     setUploading(true);
@@ -229,12 +291,24 @@ export default function UploadPage({
             Theme ID: <code>{draft.themeId}</code> · version {draft.version}
           </p>
           <label>
-            Background image (PNG, JPEG, or WebP)
+            {mediaLabel}
             <input
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept={mediaAccept}
               onChange={(event) => {
-                setFile(event.target.files?.[0] ?? null);
+                const next = event.target.files?.[0] ?? null;
+                if (next && !isAcceptedMediaType(next.type)) {
+                  setFile(null);
+                  setUploadStatus(
+                    gifAllowed
+                      ? "Only PNG, JPEG, WebP, or GIF is allowed for this draft."
+                      : "Only PNG, JPEG, or WebP is allowed (GIF requires ENABLE_GIF_UPLOADS and Windows-only platforms).",
+                  );
+                  event.target.value = "";
+                  return;
+                }
+                setUploadStatus(null);
+                setFile(next);
               }}
             />
           </label>
@@ -260,7 +334,13 @@ export default function UploadPage({
             </label>
             <label>
               Name
-              <input name="name" type="text" minLength={2} maxLength={80} required />
+              <input
+                name="name"
+                type="text"
+                minLength={2}
+                maxLength={80}
+                required
+              />
             </label>
             <label>
               Description
@@ -305,7 +385,12 @@ export default function UploadPage({
               <input name="sourceUrl" type="url" placeholder="https://" />
             </label>
             <label>
-              <input name="rightsDeclared" type="checkbox" value="true" required />
+              <input
+                name="rightsDeclared"
+                type="checkbox"
+                value="true"
+                required
+              />
               I declare I have the rights to publish this media
             </label>
           </fieldset>
@@ -313,7 +398,12 @@ export default function UploadPage({
           <fieldset>
             <legend>Platforms and appearance</legend>
             <label>
-              <input name="platforms" type="checkbox" value="macos" defaultChecked />
+              <input
+                name="platforms"
+                type="checkbox"
+                value="macos"
+                defaultChecked
+              />
               macOS
             </label>
             <label>
@@ -363,15 +453,30 @@ export default function UploadPage({
             <legend>Palette and focal point</legend>
             <label>
               Accent
-              <input name="accent" type="text" defaultValue="#FF00AA" required />
+              <input
+                name="accent"
+                type="text"
+                defaultValue="#FF00AA"
+                required
+              />
             </label>
             <label>
               Secondary
-              <input name="secondary" type="text" defaultValue="#110022" required />
+              <input
+                name="secondary"
+                type="text"
+                defaultValue="#110022"
+                required
+              />
             </label>
             <label>
               Highlight
-              <input name="highlight" type="text" defaultValue="#00FFCC" required />
+              <input
+                name="highlight"
+                type="text"
+                defaultValue="#00FFCC"
+                required
+              />
             </label>
             <label>
               Focal X (0–1)

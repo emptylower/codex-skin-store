@@ -104,7 +104,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   return redirect(localePath(locale, "/me/profile"));
 }
 
-export default function ProfilePage({ loaderData, actionData }: Route.ComponentProps) {
+export default function ProfilePage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const data = actionData ?? loaderData;
   const { title, profile, error, locale } = data;
 
@@ -136,7 +139,12 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
         </label>
         <label>
           Bio
-          <textarea name="bio" defaultValue={profile.bio} maxLength={280} rows={4} />
+          <textarea
+            name="bio"
+            defaultValue={profile.bio}
+            maxLength={280}
+            rows={4}
+          />
         </label>
         <button type="submit">Save profile</button>
       </Form>

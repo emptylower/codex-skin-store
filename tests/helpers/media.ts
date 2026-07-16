@@ -64,7 +64,11 @@ export function png(width: number, height: number): Uint8Array {
   ihdr[10] = 0; // compression
   ihdr[11] = 0; // filter
   ihdr[12] = 0; // interlace
-  return concat(PNG_SIGNATURE, pngChunk("IHDR", ihdr), pngChunk("IEND", new Uint8Array(0)));
+  return concat(
+    PNG_SIGNATURE,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IEND", new Uint8Array(0)),
+  );
 }
 
 /** Minimal JPEG: SOI + JFIF APP0 + SOF0 (baseline) + EOI. */
@@ -158,14 +162,7 @@ export function gif(width: number, height: number, frames = 1): Uint8Array {
   for (let i = 0; i < frames; i += 1) {
     // Graphic Control Extension (optional but fine) + Image Descriptor + minimal LZW
     const gce = new Uint8Array([
-      0x21,
-      0xf9,
-      0x04,
-      0x00,
-      0x00,
-      0x00,
-      0x00,
-      0x00,
+      0x21, 0xf9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
     ]);
     const imageDesc = concat(
       new Uint8Array([0x2c]),
@@ -193,10 +190,7 @@ export const zipBytes = new Uint8Array([
 ]);
 
 /** Valid PNG with trailing HTML (polyglot / polyfill attack surface). */
-export function pngWithTrailingHtml(
-  width = 64,
-  height = 64,
-): Uint8Array {
+export function pngWithTrailingHtml(width = 64, height = 64): Uint8Array {
   const base = png(width, height);
   const trailing = new TextEncoder().encode("<html><script>alert(1)</script>");
   return concat(base, trailing);

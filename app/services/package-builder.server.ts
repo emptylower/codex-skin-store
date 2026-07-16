@@ -317,8 +317,7 @@ function parseHex(hex: string): { r: number; g: number; b: number } {
 
 function lightenHex(hex: string, amount: number): string {
   const { r, g, b } = parseHex(hex);
-  const mix = (c: number) =>
-    Math.min(255, Math.round(c + (255 - c) * amount));
+  const mix = (c: number) => Math.min(255, Math.round(c + (255 - c) * amount));
   return `#${[mix(r), mix(g), mix(b)]
     .map((c) => c.toString(16).padStart(2, "0"))
     .join("")
@@ -597,15 +596,9 @@ async function writeVerifyZipAndMarkReady(
       continue;
     }
     const key = generatedKey(themeId, version, artifact.path);
-    const put = await putImmutableArtifact(
-      deps.packages,
-      key,
-      artifact.bytes,
-      {
-        contentType:
-          contentTypes[artifact.path] ?? "application/octet-stream",
-      },
-    );
+    const put = await putImmutableArtifact(deps.packages, key, artifact.bytes, {
+      contentType: contentTypes[artifact.path] ?? "application/octet-stream",
+    });
     keyByPath.set(artifact.path, key);
     shaByPath.set(artifact.path, put.sha256);
     sizeByPath.set(artifact.path, put.size);
@@ -795,8 +788,7 @@ export async function buildPackageVersion(
     reencodeLargeSource: deps.reencodeLargeSource ?? null,
   };
   const prepare =
-    deps.prepareStatic ??
-    ((d, b, i, o) => prepareStaticMedia(d, b, i, o));
+    deps.prepareStatic ?? ((d, b, i, o) => prepareStaticMedia(d, b, i, o));
 
   let media: PreparedMedia;
   try {

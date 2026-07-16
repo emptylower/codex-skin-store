@@ -114,8 +114,7 @@ export default {
 
     const body = {
       approvalRequired: true,
-      note:
-        "Remote deploy and workflow are approval-gated. Local scaffold only.",
+      note: "Remote deploy and workflow are approval-gated. Local scaffold only.",
       flags: {
         ENABLE_GIF_UPLOADS: enableGif,
         ZIP_WRITER: zipWriter,

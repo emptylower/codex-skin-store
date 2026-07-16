@@ -58,8 +58,7 @@ export function renderInstallPrompt(input: InstallPromptInput): string {
 
   const platformLines = platforms
     .map((p) => {
-      const target =
-        p === "macos" ? MACOS_TARGET : WINDOWS_TARGET;
+      const target = p === "macos" ? MACOS_TARGET : WINDOWS_TARGET;
       const pin = TARGET_RUNTIME_PINS[target];
       return `- platform=${p} target=${target} runtime_commit=${pin.commit}`;
     })
@@ -151,9 +150,7 @@ export function renderInstallMarkdown(input: InstallPromptInput): string {
     attribution ? `Attribution: ${attribution}` : null,
     "",
     "## Supported platforms",
-    platforms.length
-      ? platforms.map((p) => `- ${p}`).join("\n")
-      : "- none",
+    platforms.length ? platforms.map((p) => `- ${p}`).join("\n") : "- none",
     "",
     "## Compatibility targets",
     targets.map((t) => `- \`${t}\``).join("\n") || "- none",

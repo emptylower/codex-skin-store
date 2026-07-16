@@ -149,7 +149,9 @@ function createDeps(
 ): PackageJobDeps & { queueSend: ReturnType<typeof vi.fn> } {
   const queueSend =
     overrides?.queueSend ??
-    vi.fn(async (_message: unknown, _opts?: { delaySeconds?: number }) => undefined);
+    vi.fn(
+      async (_message: unknown, _opts?: { delaySeconds?: number }) => undefined,
+    );
   const sources = {
     head: vi.fn(async () => null),
     delete: vi.fn(async () => undefined),
@@ -331,7 +333,10 @@ describe("package job leasing", () => {
        WHERE theme_id = ? AND version = 1`,
     )
       .bind(THEME_ID)
-      .first<{ generation_state: string; generation_error_code: string | null }>();
+      .first<{
+        generation_state: string;
+        generation_error_code: string | null;
+      }>();
     expect(version).toMatchObject({
       generation_state: "processing",
       generation_error_code: null,

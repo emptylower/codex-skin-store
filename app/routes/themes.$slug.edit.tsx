@@ -265,7 +265,9 @@ export default function EditThemePage({
               : ""}
           </p>
         ) : null}
-        <p className="text-sm text-slate-600">Platforms: {platformsLabel(theme)}</p>
+        <p className="text-sm text-slate-600">
+          Platforms: {platformsLabel(theme)}
+        </p>
         {latest?.payloadDigest ? (
           <p className="break-all font-mono text-xs">
             payload: {latest.payloadDigest}

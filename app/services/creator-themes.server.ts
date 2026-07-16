@@ -161,14 +161,7 @@ export async function createDraft(
              favorites_count, downloads_count, created_at, updated_at
            ) VALUES (?, ?, ?, ?, NULL, 'draft', 'clean', 'processing', 0, 0, ?, ?)`,
         )
-        .bind(
-          themeId,
-          deps.userId,
-          input.slug,
-          input.sourceLocale,
-          now,
-          now,
-        ),
+        .bind(themeId, deps.userId, input.slug, input.sourceLocale, now, now),
       deps.db
         .prepare(
           `INSERT INTO theme_versions (
@@ -345,13 +338,7 @@ export async function updateDraftMetadata(
            SET name = ?, description = ?, updated_at = ?
            WHERE theme_id = ? AND locale = ?`,
         )
-        .bind(
-          input.name,
-          input.description,
-          now,
-          theme.id,
-          input.sourceLocale,
-        ),
+        .bind(input.name, input.description, now, theme.id, input.sourceLocale),
     ]);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -371,7 +358,11 @@ export async function updateDraftMetadata(
 export async function createVersion(
   deps: CreatorLifecycleDeps | { db: D1Database; now?: () => number },
   args: { userId: string; themeId: string; input: unknown },
-): Promise<{ versionId: string; version: number; generationState: "awaiting_upload" }> {
+): Promise<{
+  versionId: string;
+  version: number;
+  generationState: "awaiting_upload";
+}> {
   const input = parseInput(args.input);
   const now = deps.now?.() ?? Date.now();
   const theme = await loadOwnedTheme(deps.db, args.themeId, args.userId);
@@ -439,13 +430,7 @@ export async function createVersion(
          SET name = ?, description = ?, updated_at = ?
          WHERE theme_id = ? AND locale = ?`,
       )
-      .bind(
-        input.name,
-        input.description,
-        now,
-        theme.id,
-        theme.source_locale,
-      ),
+      .bind(input.name, input.description, now, theme.id, theme.source_locale),
     deps.db
       .prepare(`UPDATE themes SET updated_at = ? WHERE id = ?`)
       .bind(now, theme.id),
@@ -506,7 +491,11 @@ async function assertPackageHead(
 export async function publishTheme(
   deps: CreatorLifecycleDeps,
   args: { userId: string; themeId: string; version: number },
-): Promise<{ visibility: "public"; currentVersion: number; packageStatus: "ready" }> {
+): Promise<{
+  visibility: "public";
+  currentVersion: number;
+  packageStatus: "ready";
+}> {
   const now = deps.now?.() ?? Date.now();
   const theme = await loadOwnedTheme(deps.db, args.themeId, args.userId);
 
@@ -683,9 +672,7 @@ export async function retryFailedVersion(
       )
       .bind(now, args.themeId, args.version),
     deps.db
-      .prepare(
-        `DELETE FROM source_uploads WHERE theme_id = ? AND version = ?`,
-      )
+      .prepare(`DELETE FROM source_uploads WHERE theme_id = ? AND version = ?`)
       .bind(args.themeId, args.version),
     deps.db
       .prepare(

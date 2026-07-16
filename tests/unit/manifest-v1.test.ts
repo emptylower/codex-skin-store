@@ -119,11 +119,13 @@ describe("manifest v1", () => {
     const manifest = buildManifest(manifestFixture);
     const json = serializeManifest(manifest);
     expect(json.endsWith("\n")).toBe(true);
-    expect(json).toBe(`${JSON.stringify(JSON.parse(json), null, 0)}\n`.replace(
-      // rebuild via sorted keys through serialize again for stability check
-      JSON.stringify(JSON.parse(json)),
-      JSON.stringify(JSON.parse(serializeManifest(manifest))),
-    ));
+    expect(json).toBe(
+      `${JSON.stringify(JSON.parse(json), null, 0)}\n`.replace(
+        // rebuild via sorted keys through serialize again for stability check
+        JSON.stringify(JSON.parse(json)),
+        JSON.stringify(JSON.parse(serializeManifest(manifest))),
+      ),
+    );
     // Keys at top level are sorted alphabetically.
     const withoutNl = json.slice(0, -1);
     const parsed = JSON.parse(withoutNl) as Record<string, unknown>;

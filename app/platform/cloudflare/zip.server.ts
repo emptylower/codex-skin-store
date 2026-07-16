@@ -8,7 +8,10 @@ import type {
 
 export type { StoreZipWriter, StoreZipWriterImplementation, ZipEntry };
 export { clientZipWriter } from "~/platform/cloudflare/zip-client.server";
-export { fflateWriter, PACKAGE_ZIP_MTIME } from "~/platform/cloudflare/zip-fflate.server";
+export {
+  fflateWriter,
+  PACKAGE_ZIP_MTIME,
+} from "~/platform/cloudflare/zip-fflate.server";
 
 /**
  * Default remains fflate until the deployed staging spike (Task 6 gate) proves
@@ -39,9 +42,10 @@ export async function archiveDigestFromStream(
   // Cloudflare Workers expose crypto.DigestStream; fall back to subtle.digest.
   const DigestStreamCtor = (
     crypto as unknown as {
-      DigestStream?: new (
-        algorithm: string,
-      ) => TransformStream<Uint8Array, Uint8Array> & {
+      DigestStream?: new (algorithm: string) => TransformStream<
+        Uint8Array,
+        Uint8Array
+      > & {
         digest: Promise<ArrayBuffer>;
       };
     }

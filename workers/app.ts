@@ -87,7 +87,11 @@ export default {
     }
   },
 
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ) {
     ctx.waitUntil(sweepExpiredJobs(createJobDeps(env), new Date()));
   },
 } satisfies ExportedHandler<Env, PackageQueueMessage>;

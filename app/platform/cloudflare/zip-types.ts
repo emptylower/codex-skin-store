@@ -20,7 +20,9 @@ export type StoreZipWriterImplementation = "client-zip" | "fflate";
 
 export type StoreZipWriter = {
   implementation: StoreZipWriterImplementation;
-  stream: (entries: AsyncIterable<ZipEntry> | Iterable<ZipEntry>) => ReadableStream<Uint8Array>;
+  stream: (
+    entries: AsyncIterable<ZipEntry> | Iterable<ZipEntry>,
+  ) => ReadableStream<Uint8Array>;
 };
 
 export function entryName(entry: ZipEntry): string {

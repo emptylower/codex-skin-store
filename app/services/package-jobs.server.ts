@@ -197,8 +197,7 @@ export async function failJob(
     return { kind: "ignored" };
   }
 
-  const canRetry =
-    input.retryable && job.attempt < job.max_attempts;
+  const canRetry = input.retryable && job.attempt < job.max_attempts;
 
   if (canRetry) {
     const delaySeconds = retryDelaySeconds(job.attempt);
@@ -218,14 +217,7 @@ export async function failJob(
            AND state = 'leased'
            AND lease_owner = ?`,
       )
-      .bind(
-        availableAt,
-        input.code,
-        detail,
-        nowMs,
-        input.jobId,
-        input.owner,
-      )
+      .bind(availableAt, input.code, detail, nowMs, input.jobId, input.owner)
       .run();
 
     if (result.meta.changes !== 1) return { kind: "ignored" };
