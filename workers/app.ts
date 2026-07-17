@@ -22,9 +22,14 @@ const requestHandler = createRequestHandler(
   import.meta.env.MODE,
 );
 
-/** Production CSP aligned with public/_headers (plus blob: for previews). */
+/**
+ * Production CSP.
+ * React Router SSR emits inline scripts for hydration/context handoff, so
+ * script-src must allow 'unsafe-inline'. Cloudflare Web Analytics beacon is
+ * optional and allowed when the zone injects it.
+ */
 const PRODUCTION_CSP =
-  "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'";
+  "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
 
 /**
  * Dev CSP must allow Vite HMR (inline refresh runtime + websocket).
